@@ -9,6 +9,8 @@ Application web autonome, déployable sur GitHub Pages.
 - Regroupe les doses par rendez-vous : une injection couvre plusieurs valences.
 - Distingue trois états : à faire, fait mais non vérifié, fait et vérifié.
 - Propose un schéma de rattrapage en cas de retard, à faire confirmer par un médecin.
+- Conserve les photographies des pages du carnet papier, débarrassées de leurs métadonnées EXIF.
+- Chiffre l'ensemble des données sur l'appareil derrière une phrase secrète.
 
 ## Ce qu'elle ne fait pas
 
@@ -46,9 +48,9 @@ comme sous `/<nom-du-depot>/`, sans configuration.
 |---|---|---|
 | 0 | Squelette, CI, déploiement Pages | fait |
 | 2 | Référentiel fr-2025, moteur de statut, rattrapage, LMS | fait, 32 tests |
-| 3 | Persistance IndexedDB | partiel — chiffrement à faire |
-| 4 | Onboarding, écran Statut, saisie de dose | fait |
-| 5 | Import photo et OCR | à faire |
+| 3 | Persistance IndexedDB, chiffrement AES-GCM, effacement | fait, 8 tests |
+| 4 | Onboarding, écran Statut, saisie de dose, réglages | fait |
+| 5 | Photographies du carnet (capture, import, visionneuse) | fait — OCR à faire |
 | 6 | Récapitulatif PDF et export .ics | à faire |
 | 7 | Courbes de croissance | math faite, tables OMS à embarquer |
 | 8 | Multi-enfants et fusion co-parent | à faire |

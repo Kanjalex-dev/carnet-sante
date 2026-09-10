@@ -30,3 +30,18 @@ Reste à faire : télécharger Newsreader et Public Sans en woff2 et les servir 
 Décision : retenir le schéma de Vaccination Info Service.
 Raison : source professionnelle de Santé publique France, plus autoritative que la presse santé.
 Alternative écartée : 2-4-12, présenté par d'autres sources. Divergence documentée dans `docs/DATA-SOURCES.md` — **à trancher avec un professionnel**.
+
+## Modèle « coffre » plutôt que chiffrement champ par champ
+Décision : tout le jeu de données est sérialisé et chiffré comme un seul enregistrement ; les photographies sont chiffrées une par une, à part.
+Raison : aucune donnée de santé ne peut alors subsister en clair dans un index IndexedDB, et le code de déchiffrement tient en un endroit vérifiable.
+Alternative écartée : chiffrer chaque champ sensible en gardant les index en clair — plus rapide à grande échelle, mais l'index trahit déjà les dates et les identifiants. Le modèle coffre ne tient pas sur des milliers d'enregistrements ; ce n'est pas l'usage ici.
+
+## Les photographies sont réencodées, jamais stockées telles quelles
+Décision : passage systématique par un canvas, réencodage JPEG, 2000 px de côté maximum.
+Raison : une photo de téléphone embarque les coordonnées GPS du lieu de prise de vue dans ses métadonnées EXIF. Le réencodage les supprime intégralement. Effet secondaire utile : 182 ko au lieu de plusieurs mégaoctets.
+Alternative écartée : stocker le fichier d'origine et masquer l'EXIF à l'affichage — la donnée resterait présente dans l'export.
+
+## Une sortie de secours en cas de phrase perdue
+Décision : l'écran de déverrouillage permet d'effacer définitivement toutes les données, après saisie du mot EFFACER.
+Raison : sans elle, un utilisateur qui oublie sa phrase se retrouve devant une application qu'il ne peut ni ouvrir ni réinitialiser. Une impasse est un défaut, pas une mesure de sécurité.
+Alternative écartée : une question de secours ou une clé de récupération — les deux affaiblissent le chiffrement au profit d'un confort marginal.
