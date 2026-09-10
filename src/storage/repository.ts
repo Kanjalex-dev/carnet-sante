@@ -192,6 +192,31 @@ export async function deleteAttachment(id: string): Promise<void> {
  * sans elle les données sont irrécupérables, et une application qu'on ne peut
  * plus ni ouvrir ni réinitialiser est une impasse.
  */
+export async function updateVaccination(
+  id: string,
+  patch: Partial<VaccinationEvent>,
+): Promise<void> {
+  await mutate((v) => {
+    const e = v.vaccinations.find((x) => x.id === id)
+    if (e) Object.assign(e, patch, { updatedAt: stamp() })
+  })
+}
+
+/** Suppression logique : on n'efface jamais un événement, on le marque. */
+export async function softDeleteVaccination(id: string): Promise<void> {
+  await updateVaccination(id, { deletedAt: stamp() })
+}
+
+export async function attachToVaccination(eventId: string, attachmentId: string): Promise<void> {
+  await mutate((v) => {
+    const e = v.vaccinations.find((x) => x.id === eventId)
+    if (e && !e.attachmentIds.includes(attachmentId)) {
+      e.attachmentIds.push(attachmentId)
+      e.updatedAt = stamp()
+    }
+  })
+}
+
 export async function wipeAll(): Promise<void> {
   key = null
   cache = null

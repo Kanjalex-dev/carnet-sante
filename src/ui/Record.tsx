@@ -1,0 +1,154 @@
+import { useMemo, useState } from 'react'
+import type { Child, Schedule, VaccinationEvent } from '../domain/types'
+import { listAttachments, softDeleteVaccination } from '../storage/repository'
+import { buildRecap, type RecapOptions } from '../storage/pdf'
+import { Button, LegalNotice } from './atoms'
+import { PhotoSection } from './Photos'
+
+const FR = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+function humanDate(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number)
+  return FR.format(new Date(y, m - 1, d))
+}
+
+export function Record({ child, schedule, events, onChange }: {
+  child: Child
+  schedule: Schedule
+  events: VaccinationEvent[]
+  onChange: () => Promise<void>
+}) {
+  const [exporting, setExporting] = useState(false)
+  const [photoKey, setPhotoKey] = useState(0)
+
+  const live = useMemo(
+    () => events.filter((e) => !e.deletedAt).sort((a, b) => (a.date < b.date ? 1 : -1)),
+    [events],
+  )
+  const unverified = live.filter((e) => !e.verifiedByUser).length
+
+  return (
+    <div className="mx-auto flex min-h-dvh w-full max-w-[440px] flex-col">
+      <header className="flex flex-col gap-1 px-5 pt-4 pb-3">
+        <h1 className="font-display m-0 text-[26px] leading-tight font-medium tracking-tight">
+          Le carnet de {child.firstName}
+        </h1>
+        <p className="text-ink-muted m-0 text-[13px]">
+          {live.length === 0
+            ? 'Aucune vaccination enregistrée pour le moment.'
+            : `${live.length} vaccination${live.length > 1 ? 's' : ''} enregistrée${live.length > 1 ? 's' : ''}`}
+        </p>
+      </header>
+
+      <main className="flex flex-1 flex-col gap-6 px-5 pb-6">
+        <section className="flex flex-col gap-2.5">
+          <h2 className="text-ink-muted m-0 text-[11px] font-bold tracking-[0.09em] uppercase">
+            Vaccinations enregistrées
+          </h2>
+          {live.length === 0 ? (
+            <p className="border-line bg-surface text-ink-muted m-0 rounded-[12px] border px-3.5 py-4 text-[13px] leading-snug text-pretty">
+              Les doses que vous marquez comme faites depuis l'onglet Statut apparaîtront ici, et
+              pourront être corrigées.
+            </p>
+          ) : (
+            <ul className="m-0 flex list-none flex-col gap-2 p-0">
+              {live.map((e) => (
+                <EventRow key={e.id} event={e}
+                  onDelete={async () => { await softDeleteVaccination(e.id); await onChange() }} />
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <PhotoSection childId={child.id} refreshKey={photoKey} />
+
+        <section className="border-line bg-surface flex flex-col gap-3 rounded-[12px] border p-4">
+          <div className="flex flex-col gap-1">
+            <h2 className="m-0 text-[15px] font-semibold">Transmettre le récapitulatif</h2>
+            <p className="text-ink-muted m-0 text-[12.5px] leading-snug text-pretty">
+              Un PDF reprenant les vaccinations, les pages photographiées en preuve, et un
+              cartouche à faire signer par un professionnel de santé.
+            </p>
+          </div>
+          {unverified > 0 && (
+            <p className="border-due-border bg-due-bg text-ink-strong m-0 rounded-[8px] border px-3 py-2 text-[12.5px]">
+              {unverified} ligne{unverified > 1 ? 's' : ''} non vérifiée{unverified > 1 ? 's' : ''} —
+              elle{unverified > 1 ? 's' : ''} apparaîtra{unverified > 1 ? 'ont' : ''} distinctement dans le document.
+            </p>
+          )}
+          <Button full disabled={exporting} onClick={async () => {
+            setExporting(true)
+            try {
+              await exportRecap(child, schedule, events, {
+                includePhotos: true, includeSignature: true, includeLots: true,
+              })
+            } finally { setExporting(false); setPhotoKey((k) => k + 1) }
+          }}>
+            {exporting ? 'Génération…' : 'Générer le PDF'}
+          </Button>
+          <p className="text-ink-muted m-0 text-[11.5px] leading-snug text-pretty">
+            Ce document ne fait foi qu'une fois signé. Il contient des données de santé : ne le
+            transmettez qu'à un destinataire de confiance.
+          </p>
+        </section>
+      </main>
+
+      <LegalNotice />
+    </div>
+  )
+}
+
+function EventRow({ event, onDelete }: { event: VaccinationEvent; onDelete: () => void }) {
+  const [confirming, setConfirming] = useState(false)
+  return (
+    <li className="border-line bg-surface rounded-[12px] border p-3.5"
+      style={{ borderLeft: `3px solid ${event.verifiedByUser ? '#2F7A57' : '#B08725'}` }}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-1">
+          <span className="text-[15px] font-semibold tracking-tight">{humanDate(event.date)}</span>
+          <span className="text-ink-muted text-[12.5px]">{event.valences.join(', ')}</span>
+          {(event.productName || event.lotNumber) && (
+            <span className="text-ink-faint tnum text-[12px]">
+              {event.productName}{event.productName && event.lotNumber ? ' · lot ' : ''}{event.lotNumber}
+            </span>
+          )}
+        </div>
+        <span className={`shrink-0 text-[11px] font-bold ${event.verifiedByUser ? 'text-ok' : 'text-due'}`}>
+          {event.verifiedByUser ? 'Vérifié' : 'Non vérifié'}
+        </span>
+      </div>
+      <div className="bg-line-soft my-2.5 h-px" />
+      {confirming ? (
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-ink-strong text-[12.5px]">Retirer cette vaccination ?</span>
+          <div className="flex gap-2">
+            <button onClick={() => setConfirming(false)}
+              className="text-ink-muted min-h-11 px-2 text-[13px] font-semibold">Annuler</button>
+            <button onClick={onDelete}
+              className="bg-late min-h-11 rounded-[8px] px-3.5 text-[13px] font-semibold text-white">Retirer</button>
+          </div>
+        </div>
+      ) : (
+        <button onClick={() => setConfirming(true)}
+          className="text-ink-muted min-h-11 text-[12.5px] font-medium underline">
+          Corriger ou retirer
+        </button>
+      )}
+    </li>
+  )
+}
+
+async function exportRecap(
+  child: Child, schedule: Schedule, events: VaccinationEvent[], options: RecapOptions,
+) {
+  const attachments = options.includePhotos ? await listAttachments(child.id) : []
+  const bytes = await buildRecap(child, schedule, events, attachments, options)
+  const blob = new Blob([bytes.slice().buffer as ArrayBuffer], { type: 'application/pdf' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `recapitulatif-vaccinal-${child.firstName.toLowerCase()}.pdf`
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 10_000)
+}

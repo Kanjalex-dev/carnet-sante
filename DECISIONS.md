@@ -45,3 +45,21 @@ Alternative écartée : stocker le fichier d'origine et masquer l'EXIF à l'affi
 Décision : l'écran de déverrouillage permet d'effacer définitivement toutes les données, après saisie du mot EFFACER.
 Raison : sans elle, un utilisateur qui oublie sa phrase se retrouve devant une application qu'il ne peut ni ouvrir ni réinitialiser. Une impasse est un défaut, pas une mesure de sécurité.
 Alternative écartée : une question de secours ou une clé de récupération — les deux affaiblissent le chiffrement au profit d'un confort marginal.
+
+## Le PDF n'est jamais appelé « certificat »
+Décision : le document s'intitule « Récapitulatif vaccinal », porte un cartouche de contresignature et une mention de pied de page indiquant qu'il ne fait foi qu'une fois signé. Ni le cartouche ni la mention ne sont désactivables.
+Raison : un document produit par une application personnelle n'a aucune valeur opposable. Le présenter autrement créerait un faux sentiment de conformité vis-à-vis d'une crèche ou d'une école.
+Alternative écartée : un document d'allure officielle sans réserve — plus « rassurant », et trompeur.
+
+## Les photographies sont jointes en pages de preuve
+Décision : chaque page du carnet photographiée devient une page pleine du PDF, après le récapitulatif.
+Raison : c'est la photo du carnet papier qui fait preuve, pas notre retranscription. Le destinataire voit la source.
+Alternative écartée : un tableau seul — plus court, mais invérifiable par celui qui le reçoit.
+
+## Le PDF affiche les libellés, jamais les codes internes
+Décision : les valences sont converties en libellés lisibles depuis le référentiel avant impression.
+Raison : un document lu par un médecin ne doit pas porter « MenB » ou « Coq ». Défaut détecté en relisant le PDF généré, pas en lisant le code.
+
+## L'onglet Carnet porte l'historique, pas seulement les photos
+Décision : les vaccinations enregistrées sont listées, corrigeables et supprimables.
+Raison : une dose marquée faite disparaissait de l'écran Statut sans réapparaître ailleurs — impossible de la relire ou de corriger une erreur de saisie. Un enregistrement qu'on ne peut pas relire n'est pas un carnet.

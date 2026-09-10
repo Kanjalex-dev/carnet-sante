@@ -8,7 +8,7 @@ import {
 } from './storage/repository'
 import { Onboarding } from './ui/Onboarding'
 import { Status } from './ui/Status'
-import { Photos } from './ui/Photos'
+import { Record } from './ui/Record'
 import { Settings } from './ui/Settings'
 import { Nav, type Tab } from './ui/Nav'
 import { SetupEncryption, Unlock } from './ui/Vault'
@@ -95,7 +95,9 @@ export default function App() {
         {tab === 'status' && (
           <Status child={child} schedule={schedule} events={events} onRecord={record} />
         )}
-        {tab === 'photos' && <Photos childId={child.id} childName={child.firstName} />}
+        {tab === 'photos' && (
+          <Record child={child} schedule={schedule} events={events} onChange={load} />
+        )}
         {tab === 'settings' && (
           <Settings
             child={child} schedule={schedule} lockState={state}

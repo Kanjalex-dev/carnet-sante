@@ -11,6 +11,7 @@ Application web autonome, déployable sur GitHub Pages.
 - Propose un schéma de rattrapage en cas de retard, à faire confirmer par un médecin.
 - Conserve les photographies des pages du carnet papier, débarrassées de leurs métadonnées EXIF.
 - Chiffre l'ensemble des données sur l'appareil derrière une phrase secrète.
+- Produit un récapitulatif PDF avec les photographies en pages de preuve et un cartouche à faire contresigner.
 
 ## Ce qu'elle ne fait pas
 
@@ -51,7 +52,7 @@ comme sous `/<nom-du-depot>/`, sans configuration.
 | 3 | Persistance IndexedDB, chiffrement AES-GCM, effacement | fait, 8 tests |
 | 4 | Onboarding, écran Statut, saisie de dose, réglages | fait |
 | 5 | Photographies du carnet (capture, import, visionneuse) | fait — OCR à faire |
-| 6 | Récapitulatif PDF et export .ics | à faire |
+| 6 | Récapitulatif PDF avec pages de preuve | fait — export .ics à faire |
 | 7 | Courbes de croissance | math faite, tables OMS à embarquer |
 | 8 | Multi-enfants et fusion co-parent | à faire |
 | 9 | Durcissement, PWA, polices embarquées | à faire |
