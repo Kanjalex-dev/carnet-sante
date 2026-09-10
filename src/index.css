@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+/* Tokens — source unique de vérité. Aucune couleur ne doit exister ailleurs. */
+@theme {
+  --color-paper: #FAF7F8;
+  --color-paper-sunken: #F3EDF0;
+  --color-surface: #FFFFFF;
+  --color-surface-soft: #FEFCFD;
+
+  --color-ink: #241F26;
+  --color-ink-strong: #443E49;
+  --color-ink-muted: #6B6270;
+  --color-ink-faint: #8C8394;
+
+  --color-line: #E9E1E6;
+  --color-line-soft: #F1EBEE;
+  --color-line-strong: #DCD3DA;
+
+  --color-blue-700: #1F4467;
+  --color-blue-500: #2E5C8A;
+  --color-blue-100: #E7EFF7;
+  --color-rose-700: #A9526F;
+  --color-rose-500: #C46B8B;
+  --color-rose-100: #FCF4F7;
+  --color-rose-border: #EFD9E2;
+
+  --color-ok: #2F7A57;
+  --color-ok-bg: #EDF5F0;
+  --color-ok-border: #D3E5DB;
+  --color-due: #96631A;
+  --color-due-bg: #FAF2E3;
+  --color-due-border: #E9DAB9;
+  --color-due-rail: #B08725;
+  --color-late: #BC4626;
+  --color-late-bg: #FCEDE8;
+  --color-late-border: #F3D8CD;
+
+  --font-display: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --font-body: 'Public Sans', system-ui, -apple-system, sans-serif;
+
+  --radius-control: 8px;
+  --radius-card: 12px;
+}
+
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+}
+.tnum { font-variant-numeric: tabular-nums; }
+:focus-visible { outline: 2px solid var(--color-blue-500); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

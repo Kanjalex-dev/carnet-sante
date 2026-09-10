@@ -1,0 +1,143 @@
+{
+  "id": "fr-2025",
+  "label": "Calendrier vaccinal français",
+  "schemaVersion": 1,
+  "source": "Vaccination Info Service (Santé publique France) — calendrier des vaccinations",
+  "sourceUrl": "https://professionnels.vaccination-info-service.fr/",
+  "publishedAt": "2025-01-01",
+  "checkedAt": "2026-09-10",
+  "warning": "Données à faire confirmer par un professionnel de santé avant usage réel. Le schéma du méningocoque B fait l'objet de présentations divergentes selon les sources (3-5-12 mois retenu ici, 2-4-12 mois ailleurs).",
+  "valences": [
+    {
+      "code": "DTP",
+      "label": "Diphtérie, tétanos, poliomyélite",
+      "shortLabel": "DTP",
+      "mandatoryBirthFrom": "1900-01-01",
+      "doses": [
+        { "n": 1, "targetAgeMonths": 2, "minAgeMonths": 2, "maxAgeMonths": 6, "label": "2 mois" },
+        { "n": 2, "targetAgeMonths": 4, "minAgeMonths": 3, "maxAgeMonths": 11, "minIntervalDays": 56, "label": "4 mois" },
+        { "n": 3, "targetAgeMonths": 11, "minAgeMonths": 10, "maxAgeMonths": 18, "minIntervalDays": 168, "label": "11 mois" },
+        { "n": 4, "targetAgeMonths": 72, "minAgeMonths": 66, "maxAgeMonths": 84, "label": "6 ans" },
+        { "n": 5, "targetAgeMonths": 144, "minAgeMonths": 132, "maxAgeMonths": 156, "label": "11-13 ans" }
+      ]
+    },
+    {
+      "code": "Coq",
+      "label": "Coqueluche",
+      "shortLabel": "Coqueluche",
+      "mandatoryBirthFrom": "2018-01-01",
+      "doses": [
+        { "n": 1, "targetAgeMonths": 2, "minAgeMonths": 2, "maxAgeMonths": 6, "label": "2 mois" },
+        { "n": 2, "targetAgeMonths": 4, "minAgeMonths": 3, "maxAgeMonths": 11, "minIntervalDays": 56, "label": "4 mois" },
+        { "n": 3, "targetAgeMonths": 11, "minAgeMonths": 10, "maxAgeMonths": 18, "minIntervalDays": 168, "label": "11 mois" },
+        { "n": 4, "targetAgeMonths": 72, "minAgeMonths": 66, "maxAgeMonths": 84, "label": "6 ans" },
+        { "n": 5, "targetAgeMonths": 144, "minAgeMonths": 132, "maxAgeMonths": 156, "label": "11-13 ans" }
+      ]
+    },
+    {
+      "code": "Hib",
+      "label": "Haemophilus influenzae de type b",
+      "shortLabel": "Hib",
+      "mandatoryBirthFrom": "2018-01-01",
+      "doses": [
+        { "n": 1, "targetAgeMonths": 2, "minAgeMonths": 2, "maxAgeMonths": 6, "label": "2 mois" },
+        { "n": 2, "targetAgeMonths": 4, "minAgeMonths": 3, "maxAgeMonths": 11, "minIntervalDays": 56, "label": "4 mois" },
+        { "n": 3, "targetAgeMonths": 11, "minAgeMonths": 10, "maxAgeMonths": 18, "minIntervalDays": 168, "label": "11 mois" }
+      ]
+    },
+    {
+      "code": "HepB",
+      "label": "Hépatite B",
+      "shortLabel": "Hépatite B",
+      "mandatoryBirthFrom": "2018-01-01",
+      "doses": [
+        { "n": 1, "targetAgeMonths": 2, "minAgeMonths": 2, "maxAgeMonths": 6, "label": "2 mois" },
+        { "n": 2, "targetAgeMonths": 4, "minAgeMonths": 3, "maxAgeMonths": 11, "minIntervalDays": 56, "label": "4 mois" },
+        { "n": 3, "targetAgeMonths": 11, "minAgeMonths": 10, "maxAgeMonths": 18, "minIntervalDays": 168, "label": "11 mois" }
+      ]
+    },
+    {
+      "code": "Pneumo",
+      "label": "Pneumocoque",
+      "shortLabel": "Pneumocoque",
+      "mandatoryBirthFrom": "2018-01-01",
+      "doses": [
+        { "n": 1, "targetAgeMonths": 2, "minAgeMonths": 2, "maxAgeMonths": 6, "label": "2 mois" },
+        { "n": 2, "targetAgeMonths": 4, "minAgeMonths": 3, "maxAgeMonths": 11, "minIntervalDays": 56, "label": "4 mois" },
+        { "n": 3, "targetAgeMonths": 11, "minAgeMonths": 10, "maxAgeMonths": 18, "minIntervalDays": 168, "label": "11 mois" }
+      ]
+    },
+    {
+      "code": "ROR",
+      "label": "Rougeole, oreillons, rubéole",
+      "shortLabel": "ROR",
+      "mandatoryBirthFrom": "2018-01-01",
+      "doses": [
+        { "n": 1, "targetAgeMonths": 12, "minAgeMonths": 12, "maxAgeMonths": 15, "label": "12 mois" },
+        { "n": 2, "targetAgeMonths": 17, "minAgeMonths": 16, "maxAgeMonths": 18, "minIntervalDays": 30, "label": "16-18 mois" }
+      ]
+    },
+    {
+      "code": "MenC",
+      "label": "Méningocoque C",
+      "shortLabel": "Méningo C",
+      "mandatoryBirthFrom": "2018-01-01",
+      "mandatoryBirthUntil": "2024-12-31",
+      "supersededBy": "MenACWY",
+      "doses": [
+        { "n": 1, "targetAgeMonths": 5, "minAgeMonths": 5, "maxAgeMonths": 11, "label": "5 mois" },
+        { "n": 2, "targetAgeMonths": 12, "minAgeMonths": 12, "maxAgeMonths": 18, "minIntervalDays": 56, "label": "12 mois" }
+      ]
+    },
+    {
+      "code": "MenACWY",
+      "label": "Méningocoque ACWY",
+      "shortLabel": "Méningo ACWY",
+      "mandatoryBirthFrom": "2025-01-01",
+      "doses": [
+        { "n": 1, "targetAgeMonths": 6, "minAgeMonths": 6, "maxAgeMonths": 11, "label": "6 mois" },
+        { "n": 2, "targetAgeMonths": 12, "minAgeMonths": 12, "maxAgeMonths": 18, "minIntervalDays": 56, "label": "12 mois" }
+      ]
+    },
+    {
+      "code": "MenB",
+      "label": "Méningocoque B",
+      "shortLabel": "Méningo B",
+      "mandatoryBirthFrom": "2025-01-01",
+      "doses": [
+        { "n": 1, "targetAgeMonths": 3, "minAgeMonths": 2, "maxAgeMonths": 6, "label": "3 mois" },
+        { "n": 2, "targetAgeMonths": 5, "minAgeMonths": 4, "maxAgeMonths": 11, "minIntervalDays": 56, "label": "5 mois" },
+        { "n": 3, "targetAgeMonths": 12, "minAgeMonths": 12, "maxAgeMonths": 18, "minIntervalDays": 168, "label": "12 mois" }
+      ]
+    },
+    {
+      "code": "Rotavirus",
+      "label": "Rotavirus",
+      "shortLabel": "Rotavirus",
+      "recommended": true,
+      "doses": [
+        { "n": 1, "targetAgeMonths": 2, "minAgeMonths": 2, "maxAgeMonths": 4, "label": "2 mois" },
+        { "n": 2, "targetAgeMonths": 3, "minAgeMonths": 3, "maxAgeMonths": 6, "minIntervalDays": 28, "label": "3-4 mois" }
+      ]
+    },
+    {
+      "code": "HPV",
+      "label": "Papillomavirus humains",
+      "shortLabel": "HPV",
+      "recommended": true,
+      "doses": [
+        { "n": 1, "targetAgeMonths": 132, "minAgeMonths": 132, "maxAgeMonths": 180, "label": "11 ans" },
+        { "n": 2, "targetAgeMonths": 138, "minAgeMonths": 137, "maxAgeMonths": 186, "minIntervalDays": 150, "label": "6 mois après" }
+      ]
+    },
+    {
+      "code": "MenACWY-ado",
+      "label": "Méningocoque ACWY — adolescent",
+      "shortLabel": "Méningo ACWY ado",
+      "recommended": true,
+      "doses": [
+        { "n": 1, "targetAgeMonths": 144, "minAgeMonths": 132, "maxAgeMonths": 168, "label": "11-14 ans" }
+      ]
+    }
+  ]
+}
