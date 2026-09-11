@@ -175,12 +175,14 @@ function drawRecapPage(page: PDFPage, f: Fonts, ctx: {
   // Tableau
   text(page, 'VACCINATIONS ENREGISTRÉES', M, y, 8, f.bold, INK_MUTED)
   y -= 14
-  const colX = ctx.options.includeLots ? [M, M + 72, M + 300, M + 400] : [M, M + 72, M + 340]
+  // Largeurs calées sur le contenu réel : un numéro de lot ne doit jamais
+  // être tronqué, c'est l'information qui sert en cas de rappel de lot.
+  const colX = ctx.options.includeLots ? [M, M + 70, M + 262, M + 360] : [M, M + 70, M + 300]
   const heads = ctx.options.includeLots
     ? ['DATE', 'VALENCES', 'PRODUIT', 'N° DE LOT']
     : ['DATE', 'VALENCES', 'PRODUIT']
   heads.forEach((h, i) => text(page, h, colX[i], y - 9, 7.5, f.bold, INK_STRONG))
-  const srcX = right - 52
+  const srcX = M + 442
   text(page, 'SOURCE', srcX, y - 9, 7.5, f.bold, INK_STRONG)
   y -= 15
   page.drawLine({ start: { x: M, y }, end: { x: right, y }, thickness: 1, color: INK })
@@ -229,10 +231,20 @@ function drawRecapPage(page: PDFPage, f: Fonts, ctx: {
     .slice(0, 2).forEach((l, i) => text(page, l, M + 12, y - 56 - i * 10, 8, f.regular, INK_STRONG))
 
   const x2 = M + half + 16
-  page.drawRectangle({ x: x2, y: y - sh, width: half, height: sh, color: rgb(0.992, 0.965, 0.953), borderColor: rgb(0.953, 0.847, 0.804), borderWidth: 1 })
-  text(page, 'RESTE À RÉALISER', x2 + 12, y - 18, 7.5, f.bold, LATE)
-  if (ctx.remaining.length === 0) {
-    text(page, 'Rien à ce jour.', x2 + 12, y - 34, 10, f.regular, INK)
+  // Un encadré d'alerte vide est un contresens : quand il n'y a rien à faire,
+  // le document doit le dire calmement.
+  const none = ctx.remaining.length === 0
+  page.drawRectangle({
+    x: x2, y: y - sh, width: half, height: sh,
+    color: none ? PAPER : rgb(0.992, 0.965, 0.953),
+    borderColor: none ? LINE : rgb(0.953, 0.847, 0.804),
+    borderWidth: 1,
+  })
+  text(page, 'RESTE À RÉALISER', x2 + 12, y - 18, 7.5, f.bold, none ? INK_MUTED : LATE)
+  if (none) {
+    text(page, 'Rien à réaliser à ce jour.', x2 + 12, y - 36, 10, f.regular, INK)
+    wrap("Au regard du calendrier applicable et des dates enregistrées.", f.regular, 8, half - 24)
+      .forEach((l, i) => text(page, l, x2 + 12, y - 50 - i * 10, 8, f.regular, INK_MUTED))
   } else {
     ctx.remaining.slice(0, 4).forEach((r, i) => {
       text(page, `${r.shortLabel} — dose ${r.doseNumber}, cible ${d(r.targetDate)}`, x2 + 12, y - 34 - i * 12, 8.5, f.regular, INK)

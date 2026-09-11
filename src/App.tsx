@@ -91,7 +91,8 @@ export default function App() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <div className="flex-1">
+      {/* Réserve la hauteur de la barre fixe : aucun contenu ne passe dessous. */}
+      <div className="flex flex-1 flex-col pb-[76px]">
         {tab === 'status' && (
           <Status child={child} schedule={schedule} events={events} onRecord={record} />
         )}

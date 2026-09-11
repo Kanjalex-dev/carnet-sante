@@ -4,10 +4,15 @@ import {
 } from '../storage/repository'
 import { ImageTooLargeError, NotAnImageError, formatBytes, processImage, toObjectURL } from '../storage/image'
 import { Button } from './atoms'
+import { frStamp } from './format'
 
-const FR = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
 
-export function PhotoSection({ childId, refreshKey = 0 }: { childId: string; refreshKey?: number }) {
+
+export function PhotoSection({ childId, refreshKey = 0, onRead }: {
+  childId: string
+  refreshKey?: number
+  onRead?: (meta: AttachmentMeta) => void
+}) {
   const [items, setItems] = useState<AttachmentMeta[]>([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -64,12 +69,12 @@ export function PhotoSection({ childId, refreshKey = 0 }: { childId: string; ref
 
       {items.length === 0 ? (
         <div className="border-line-strong bg-surface-soft flex flex-col items-center gap-2 rounded-[12px] border border-dashed px-4 py-7">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#A79EAD" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#8496A5" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v18H6.5A2.5 2.5 0 0 1 4 18.5v-13Z" /><path d="M8 8h7" /><path d="M8 12h5" />
           </svg>
           <p className="m-0 text-center text-[13.5px] font-semibold">Aucune page enregistrée</p>
           <p className="text-ink-muted m-0 max-w-[280px] text-center text-[12.5px] leading-snug text-pretty">
-            Photographiez les pages de vaccination : ce sont elles qui font preuve, jointes au récapitulatif.
+            Photographiez les pages de vaccination : ce sont elles qui font preuve, jointes au récapitulatif.
           </p>
         </div>
       ) : (
@@ -87,6 +92,7 @@ export function PhotoSection({ childId, refreshKey = 0 }: { childId: string; ref
         <Viewer
           meta={open}
           onClose={() => setOpen(null)}
+          onRead={onRead ? () => { const m = open; setOpen(null); onRead(m) } : undefined}
           onDelete={async () => { await deleteAttachment(open.id); setOpen(null); await refresh() }}
         />
       )}
@@ -113,7 +119,7 @@ function AddPhoto({ onFiles, busy }: { onFiles: (f: FileList | null) => void; bu
       </div>
       <div className="flex-1">
         <Button full variant="secondary" onClick={() => library.current?.click()} disabled={busy}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#443E49" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#33414F" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <rect x="3" y="4" width="18" height="16" rx="2" /><path d="m4 16 4.5-4.5 3 3L16 10l4 4" /><circle cx="9" cy="9" r="1.4" />
           </svg>
           Importer
@@ -148,16 +154,16 @@ function Thumb({ meta, onOpen }: { meta: AttachmentMeta; onOpen: () => void }) {
         <span className="bg-paper-sunken block aspect-[3/4] w-full">
           {url && <img src={url} alt="Page du carnet" className="h-full w-full object-cover" />}
         </span>
-        <span className="text-ink-muted block px-2.5 py-2 text-[11.5px]">
-          {FR.format(new Date(meta.capturedAt))} · {formatBytes(meta.bytes)}
+        <span className="text-ink-muted block truncate px-2 py-1.5 text-[11px]">
+          {frStamp(meta.capturedAt)}
         </span>
       </button>
     </li>
   )
 }
 
-function Viewer({ meta, onClose, onDelete }: {
-  meta: AttachmentMeta; onClose: () => void; onDelete: () => void
+function Viewer({ meta, onClose, onDelete, onRead }: {
+  meta: AttachmentMeta; onClose: () => void; onDelete: () => void; onRead?: () => void
 }) {
   const url = useImageURL(meta.id, meta.mimeType)
   const [confirming, setConfirming] = useState(false)
@@ -170,9 +176,9 @@ function Viewer({ meta, onClose, onDelete }: {
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black/90" role="dialog" aria-modal="true" aria-label="Page du carnet">
-      <div className="flex items-center justify-between px-4 py-3">
-        <button onClick={onClose} className="min-h-11 px-2 text-[14px] font-semibold text-white">Fermer</button>
-        <span className="text-[12px] text-white/70">
+      <div className="flex items-center justify-between gap-3 px-4 py-3">
+        <button onClick={onClose} className="min-h-11 shrink-0 px-2 text-[14px] font-semibold text-white">Fermer</button>
+        <span className="shrink-0 text-[12px] text-white/70">
           {meta.width}×{meta.height} · {formatBytes(meta.bytes)}
         </span>
       </div>
@@ -180,6 +186,18 @@ function Viewer({ meta, onClose, onDelete }: {
         {url && <img src={url} alt="Page du carnet, taille réelle" className="max-h-full max-w-full object-contain" />}
       </div>
       <div className="flex flex-col gap-2 px-4 py-4">
+        {onRead && !confirming && (
+          <button onClick={onRead}
+            className="bg-blue-500 flex min-h-12 items-center justify-center gap-2 rounded-[8px] text-[14.5px] font-semibold text-white">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="1.9"
+              strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M4 7V5a1 1 0 0 1 1-1h2" /><path d="M17 4h2a1 1 0 0 1 1 1v2" />
+              <path d="M20 17v2a1 1 0 0 1-1 1h-2" /><path d="M7 20H5a1 1 0 0 1-1-1v-2" />
+              <path d="M7 12h10" />
+            </svg>
+            Lire cette page
+          </button>
+        )}
         {confirming ? (
           <>
             <p className="m-0 text-center text-[13px] text-white">

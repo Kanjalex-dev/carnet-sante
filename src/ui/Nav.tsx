@@ -17,7 +17,7 @@ const ICONS: Record<Tab, { path: React.ReactNode; label: string }> = {
 
 export function Nav({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void }) {
   return (
-    <nav className="bg-surface border-line sticky bottom-0 mx-auto flex w-full max-w-[440px] border-t px-3 pt-2 pb-3.5"
+    <nav className="bg-surface border-line fixed inset-x-0 bottom-0 z-30 mx-auto flex w-full max-w-[440px] border-t px-3 pt-2 pb-[max(0.875rem,env(safe-area-inset-bottom))]"
       aria-label="Navigation principale">
       {(Object.keys(ICONS) as Tab[]).map((t) => {
         const active = t === tab
@@ -25,7 +25,7 @@ export function Nav({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void })
           <button key={t} onClick={() => onChange(t)} aria-current={active ? 'page' : undefined}
             className="flex min-h-11 flex-1 flex-col items-center gap-1 pt-1">
             <svg width="21" height="21" viewBox="0 0 24 24" fill="none"
-              stroke={active ? '#2E5C8A' : '#8C8394'} strokeWidth={active ? 2 : 1.9}
+              stroke={active ? '#275C94' : '#8496A5'} strokeWidth={active ? 2 : 1.9}
               strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               {ICONS[t].path}
             </svg>

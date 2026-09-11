@@ -22,7 +22,7 @@ export function Unlock({ onUnlock, onWipe }: {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[440px] flex-col justify-center gap-6 px-5 py-10">
       <div className="flex flex-col gap-2">
-        <div className="h-9 w-9 rounded-full" style={{ background: 'linear-gradient(140deg,#2E5C8A 0%,#C46B8B 100%)' }} />
+        <div className="h-9 w-9 rounded-full" style={{ background: 'linear-gradient(140deg,#275C94 0%,#C46B8B 100%)' }} />
         <h1 className="font-display m-0 text-[28px] leading-tight font-medium tracking-tight">Carnet verrouillé</h1>
         <p className="text-ink-muted m-0 text-[15px] text-pretty">
           Saisissez la phrase secrète pour déchiffrer les données de cet appareil.
@@ -118,7 +118,7 @@ export function SetupEncryption({ onEnable, onCancel }: {
             10 caractères minimum. Une phrase entière vaut mieux qu'un mot compliqué.
           </span>
         </label>
-        {tooShort && <p className="text-late m-0 text-[13px] font-medium">Trop courte : 10 caractères minimum.</p>}
+        {tooShort && <p className="text-late m-0 text-[13px] font-medium">Trop courte : 10 caractères minimum.</p>}
 
         <label className="flex flex-col gap-2">
           <span className="text-ink-muted text-[11px] font-bold tracking-[0.09em] uppercase">Confirmation</span>

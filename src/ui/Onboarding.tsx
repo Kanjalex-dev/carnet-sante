@@ -15,7 +15,7 @@ export function Onboarding({ onCreate }: {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[440px] flex-col gap-6 px-5 py-10">
       <header className="flex flex-col gap-2">
-        <div className="h-9 w-9 rounded-full" style={{ background: 'linear-gradient(140deg,#2E5C8A 0%,#C46B8B 100%)' }} />
+        <div className="h-9 w-9 rounded-full" style={{ background: 'linear-gradient(140deg,#275C94 0%,#C46B8B 100%)' }} />
         <h1 className="font-display m-0 text-[30px] leading-tight font-medium tracking-tight">Carnet</h1>
         <p className="text-ink-muted m-0 text-[15px]">
           Le suivi vaccinal de votre enfant, de la naissance à l'âge adulte. Les données restent

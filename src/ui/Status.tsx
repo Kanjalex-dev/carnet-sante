@@ -3,20 +3,10 @@ import { addMonths, today as todayFn } from '../domain/dates'
 import { computeStatus, groupByVisit, proposeCatchUp, summarise, upcomingDoses } from '../domain/status'
 import type { DoseGroup } from '../domain/status'
 import type { Child, Schedule, VaccinationEvent } from '../domain/types'
-import { IconCheck, IconShield, LegalNotice, StatusPill } from './atoms'
+import { IconCheck, LegalNotice, StatusPill } from './atoms'
 import { DoseEntry, type DoseEntryValue } from './DoseEntry'
+import { frDate as humanDate, humanAge } from './format'
 
-const FR_DATE = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
-function humanDate(iso: string): string {
-  const [y, m, d] = iso.split('-').map(Number)
-  return FR_DATE.format(new Date(y, m - 1, d))
-}
-function humanAge(months: number): string {
-  if (months < 24) return `${months} mois`
-  const years = Math.floor(months / 12)
-  const rest = months % 12
-  return rest === 0 ? `${years} ans` : `${years} ans et ${rest} mois`
-}
 
 export function Status({ child, schedule, events, onRecord }: {
   child: Child
@@ -27,7 +17,7 @@ export function Status({ child, schedule, events, onRecord }: {
   const today = todayFn()
   const [entry, setEntry] = useState<DoseGroup | null>(null)
 
-  const { statuses, summary, soon, catchUp } = useMemo(() => {
+  const { summary, soon, catchUp } = useMemo(() => {
     const statuses = computeStatus(schedule, child.birthDate, events, today)
     return {
       statuses,
@@ -37,21 +27,25 @@ export function Status({ child, schedule, events, onRecord }: {
     }
   }, [schedule, child.birthDate, events, today])
 
+  // On compte les injections non vérifiées, pas les valences : une seule
+  // injection en couvre jusqu'à six, et afficher « 21 » pour 12 lignes ment.
+  const unverifiedEvents = events.filter((e) => !e.deletedAt && !e.verifiedByUser).length
+
   const late = soon.filter((g) => g.state === 'late')
   const due = soon.filter((g) => g.state === 'due')
   const upcoming = soon.filter((g) => g.state === 'upcoming')
   const horizon = humanDate(addMonths(today, 3))
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-[440px] flex-col">
+    <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col">
       <header className="flex items-center gap-2.5 px-5 pt-3.5 pb-2.5">
         <div className="font-display flex h-9 w-9 items-center justify-center rounded-full text-[17px] font-medium text-white"
-          style={{ background: 'linear-gradient(140deg,#2E5C8A 0%,#C46B8B 100%)' }} aria-hidden="true">
+          style={{ background: 'linear-gradient(140deg,#275C94 0%,#C46B8B 100%)' }} aria-hidden="true">
           {child.firstName.slice(0, 1).toUpperCase()}
         </div>
-        <div className="flex flex-col">
-          <span className="text-[16px] font-semibold tracking-tight">{child.firstName}</span>
-          <span className="text-ink-muted text-[12px]">
+        <div className="flex min-w-0 flex-col">
+          <span className="truncate text-[16px] font-semibold tracking-tight">{child.firstName}</span>
+          <span className="text-ink-muted truncate text-[12px]">
             {humanAge(summary.ageMonths)} · né{child.sex === 'F' ? 'e' : ''} le {humanDate(child.birthDate)}
           </span>
         </div>
@@ -66,6 +60,12 @@ export function Status({ child, schedule, events, onRecord }: {
           )}
           {soon.length === 0 && <span>Rien à prévoir dans les trois prochains mois.</span>}
         </h1>
+
+        <Progress
+          satisfied={summary.mandatorySatisfied}
+          total={summary.mandatoryTotal}
+          unverified={unverifiedEvents}
+        />
 
         <VisitSection title="En retard" groups={late} onPick={setEntry} />
         <VisitSection title="À faire maintenant" groups={due} onPick={setEntry} />
@@ -87,17 +87,6 @@ export function Status({ child, schedule, events, onRecord }: {
           </section>
         )}
 
-        <section className="bg-ok-bg border-ok-border flex items-center gap-2.5 rounded-[12px] border p-3.5">
-          <IconShield size={19} color="#2F7A57" />
-          <div className="flex flex-col">
-            <span className="text-ok text-[14px] font-semibold">
-              {statuses.filter((v) => v.complete).length} valence{statuses.filter((v) => v.complete).length > 1 ? 's' : ''} à jour
-            </span>
-            {summary.unverifiedCount > 0 && (
-              <span className="text-[12px] text-[#4A7A62]">dont {summary.unverifiedCount} à vérifier</span>
-            )}
-          </div>
-        </section>
 
         <p className="text-ink-faint m-0 text-[11.5px]">
           Calendrier {schedule.id} · source vérifiée le {humanDate(schedule.checkedAt)}
@@ -114,6 +103,43 @@ export function Status({ child, schedule, events, onRecord }: {
   )
 }
 
+/**
+ * La première question d'un parent n'est pas « qu'est-ce qui est en retard »
+ * mais « est-ce qu'on est à jour ». Cet indicateur y répond d'un coup d'œil,
+ * sans se substituer au détail.
+ */
+function Progress({ satisfied, total, unverified }: {
+  satisfied: number; total: number; unverified: number
+}) {
+  const ratio = total === 0 ? 0 : satisfied / total
+  const complete = satisfied === total
+  return (
+    <section className={`rounded-[12px] border p-3.5 ${
+      complete ? 'border-ok-border bg-ok-bg' : 'border-line bg-surface'
+    }`}>
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="text-ink-muted m-0 text-[11px] font-bold tracking-[0.09em] uppercase">
+          Obligations vaccinales
+        </h2>
+        <span className={`tnum shrink-0 text-[13px] font-bold ${complete ? 'text-ok' : 'text-ink'}`}>
+          {satisfied} / {total}
+        </span>
+      </div>
+      <div className="bg-line-soft mt-2.5 h-2 overflow-hidden rounded-full" role="img"
+        aria-label={`${satisfied} obligations satisfaites sur ${total}`}>
+        <div className={`h-full rounded-full ${complete ? 'bg-ok' : 'bg-blue-500'}`}
+          style={{ width: `${Math.max(3, ratio * 100)}%` }} />
+      </div>
+      <p className="text-ink-muted m-0 mt-2 text-[12px] leading-snug text-pretty">
+        {complete
+          ? "Toutes les obligations sont satisfaites à ce jour."
+          : "Calcul fondé sur le calendrier applicable à la date de naissance de l'enfant."}
+        {unverified > 0 && ` ${unverified} vaccination${unverified > 1 ? 's' : ''} importée${unverified > 1 ? 's' : ''} reste${unverified > 1 ? 'nt' : ''} à vérifier.`}
+      </p>
+    </section>
+  )
+}
+
 function VisitSection({ title, groups, onPick }: {
   title: string; groups: DoseGroup[]; onPick: (g: DoseGroup) => void
 }) {
@@ -126,7 +152,7 @@ function VisitSection({ title, groups, onPick }: {
   )
 }
 
-const RAIL: Record<string, string> = { late: '#BC4626', due: '#B08725', upcoming: '#DCD3DA' }
+const RAIL: Record<string, string> = { late: '#B23D1F', due: '#A87F1F', upcoming: '#C2D2E1' }
 
 function VisitCard({ group, onPick }: { group: DoseGroup; onPick: (g: DoseGroup) => void }) {
   const detail =
@@ -139,7 +165,7 @@ function VisitCard({ group, onPick }: { group: DoseGroup; onPick: (g: DoseGroup)
     <article className="border-line bg-surface rounded-[12px] border p-3.5"
       style={{ borderLeft: `3px solid ${RAIL[group.state]}` }}>
       <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
+        <div className="flex min-w-0 flex-col gap-1">
           <h3 className="m-0 text-[16px] font-semibold tracking-tight">Rendez-vous {group.label}</h3>
           <p className="text-ink-muted m-0 text-[13px]">
             {group.doses.length} valence{group.doses.length > 1 ? 's' : ''}
@@ -159,10 +185,10 @@ function VisitCard({ group, onPick }: { group: DoseGroup; onPick: (g: DoseGroup)
       </ul>
 
       <div className="bg-line-soft my-3 h-px" />
-      <div className="flex items-center justify-between gap-2.5">
-        <span className="text-ink-muted text-[12px] font-medium">{detail}</span>
+      <div className="flex flex-wrap items-center justify-between gap-2.5">
+        <span className="text-ink-muted min-w-0 flex-1 text-[12px] font-medium">{detail}</span>
         <button onClick={() => onPick(group)}
-          className="bg-blue-500 inline-flex min-h-11 items-center gap-1.5 rounded-[8px] px-3.5 text-[13px] font-semibold text-white">
+          className="bg-blue-500 inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-[8px] px-3.5 text-[13px] font-semibold text-white">
           <IconCheck size={15} color="#FFFFFF" />
           Marquer fait
         </button>

@@ -33,7 +33,7 @@ const STATE_STYLE: Record<DoseState, { fg: string; bg: string; border: string; l
 }
 
 const HEX: Record<DoseState, string> = {
-  late: '#BC4626', due: '#96631A', upcoming: '#6B6270', done: '#2F7A57', 'not-applicable': '#6B6270',
+  late: '#B23D1F', due: '#8C5D14', upcoming: '#5E6E7E', done: '#1E7351', 'not-applicable': '#5E6E7E',
 }
 
 export function StatusPill({ state, children }: { state: DoseState; children?: ReactNode }) {

@@ -63,3 +63,32 @@ Raison : un document lu par un médecin ne doit pas porter « MenB » ou « Coq 
 ## L'onglet Carnet porte l'historique, pas seulement les photos
 Décision : les vaccinations enregistrées sont listées, corrigeables et supprimables.
 Raison : une dose marquée faite disparaissait de l'écran Statut sans réapparaître ailleurs — impossible de la relire ou de corriger une erreur de saisie. Un enregistrement qu'on ne peut pas relire n'est pas un carnet.
+
+## L'OCR embarque son moteur plutôt que d'appeler un CDN
+Décision : les fichiers de tesseract.js (~4,6 Mo) sont servis depuis le dépôt, chargés seulement à la première lecture.
+Raison : la configuration par défaut appelle jsDelivr à chaque usage — une requête vers un tiers depuis une application de santé, et une dépendance qui rend l'app inutilisable le jour où le CDN change d'adresse.
+Alternative écartée : le CDN par défaut, plus léger pour le dépôt, incompatible avec la promesse de PRIVACY.md.
+Conséquence assumée : seule la variante SIMD est embarquée. Les navigateurs sans SIMD (antérieurs à 2021) n'ont pas la lecture locale ; l'application le dit au lieu d'échouer silencieusement.
+
+## L'analyse du texte est une couche pure, séparée du moteur
+Décision : `src/domain/parse.ts` transforme des lignes de texte en propositions, sans rien savoir de tesseract ni du navigateur.
+Raison : c'est la partie où les erreurs coûtent cher — une date mal lue devient une donnée de santé fausse. Isolée, elle se teste exhaustivement (27 tests) et se réutilise si le moteur change.
+Détail trouvé par les tests, pas par la relecture : sans filtre d'en-tête, « Date de naissance : 12/07/2025 » était proposée comme une vaccination.
+
+## Accepter une ligne une par une vaut vérification, « Tout accepter » non
+Décision : une ligne confirmée individuellement, photo sous les yeux, est marquée vérifiée ; « Tout accepter » enregistre sans marquer vérifié.
+Raison : sans cette distinction, le troisième état du toggle ne servirait à rien — tout import deviendrait « vérifié » par un seul geste. Le document produit porte la différence.
+
+## Fond bleu pâle, encre bleu-noir
+Décision : la surface de l'application passe du papier rosé à un bleu pâle clinique, les cartes restent blanches.
+Raison : registre attendu d'une application de santé, et la hiérarchie ne repose plus sur une simple bordure — les cartes blanches se détachent réellement du fond.
+Le rose reste l'accent d'identité, le bleu l'accent d'action. Le rouge d'alerte a été redescendu vers l'orangé pour rester distinguable du rose sur fond bleu.
+
+## Un indicateur de complétude, pas seulement une liste d'alertes
+Décision : l'écran Statut porte « X / Y obligations satisfaites » sous le titre.
+Raison : la première question d'un parent n'est pas « qu'est-ce qui est en retard » mais « est-ce qu'on est à jour ». L'application répondait à la seconde sans jamais répondre à la première.
+Défaut corrigé au passage : le compteur de lignes non vérifiées comptait les valences et non les injections — il affichait 21 pour 12 vaccinations importées.
+
+## La barre de navigation est fixe, et la page lui réserve sa hauteur
+Décision : `position: fixed` plus un `padding-bottom` équivalent sur le contenu.
+Raison : en `sticky`, la barre recouvrait la mention légale en bas de page. Un texte que l'on masque à moitié est pire que pas de texte du tout.

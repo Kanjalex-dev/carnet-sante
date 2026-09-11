@@ -1,15 +1,15 @@
 import { useMemo, useState } from 'react'
 import type { Child, Schedule, VaccinationEvent } from '../domain/types'
-import { listAttachments, softDeleteVaccination } from '../storage/repository'
+import {
+  type AttachmentMeta, attachToVaccination, listAttachments, mutate, newId, softDeleteVaccination,
+  stamp, updateVaccination,
+} from '../storage/repository'
+import { OcrReview } from './OcrReview'
 import { buildRecap, type RecapOptions } from '../storage/pdf'
 import { Button, LegalNotice } from './atoms'
 import { PhotoSection } from './Photos'
+import { frDate as humanDate } from './format'
 
-const FR = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
-function humanDate(iso: string): string {
-  const [y, m, d] = iso.split('-').map(Number)
-  return FR.format(new Date(y, m - 1, d))
-}
 
 export function Record({ child, schedule, events, onChange }: {
   child: Child
@@ -19,6 +19,7 @@ export function Record({ child, schedule, events, onChange }: {
 }) {
   const [exporting, setExporting] = useState(false)
   const [photoKey, setPhotoKey] = useState(0)
+  const [reading, setReading] = useState<AttachmentMeta | null>(null)
 
   const live = useMemo(
     () => events.filter((e) => !e.deletedAt).sort((a, b) => (a.date < b.date ? 1 : -1)),
@@ -27,9 +28,9 @@ export function Record({ child, schedule, events, onChange }: {
   const unverified = live.filter((e) => !e.verifiedByUser).length
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-[440px] flex-col">
+    <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col">
       <header className="flex flex-col gap-1 px-5 pt-4 pb-3">
-        <h1 className="font-display m-0 text-[26px] leading-tight font-medium tracking-tight">
+        <h1 className="font-display m-0 text-[26px] leading-tight font-medium tracking-tight text-balance">
           Le carnet de {child.firstName}
         </h1>
         <p className="text-ink-muted m-0 text-[13px]">
@@ -53,13 +54,14 @@ export function Record({ child, schedule, events, onChange }: {
             <ul className="m-0 flex list-none flex-col gap-2 p-0">
               {live.map((e) => (
                 <EventRow key={e.id} event={e}
+                  onVerify={async () => { await updateVaccination(e.id, { verifiedByUser: true }); await onChange() }}
                   onDelete={async () => { await softDeleteVaccination(e.id); await onChange() }} />
               ))}
             </ul>
           )}
         </section>
 
-        <PhotoSection childId={child.id} refreshKey={photoKey} />
+        <PhotoSection childId={child.id} refreshKey={photoKey} onRead={setReading} />
 
         <section className="border-line bg-surface flex flex-col gap-3 rounded-[12px] border p-4">
           <div className="flex flex-col gap-1">
@@ -86,28 +88,62 @@ export function Record({ child, schedule, events, onChange }: {
             {exporting ? 'Génération…' : 'Générer le PDF'}
           </Button>
           <p className="text-ink-muted m-0 text-[11.5px] leading-snug text-pretty">
-            Ce document ne fait foi qu'une fois signé. Il contient des données de santé : ne le
+            Ce document ne fait foi qu'une fois signé. Il contient des données de santé : ne le
             transmettez qu'à un destinataire de confiance.
           </p>
         </section>
       </main>
 
       <LegalNotice />
+
+      {reading && (
+        <OcrReview
+          meta={reading}
+          birthDate={child.birthDate}
+          onCancel={() => setReading(null)}
+          onConfirm={async (lines) => {
+            for (const l of lines) {
+              const id = newId()
+              await mutate((v) => {
+                v.vaccinations.push({
+                  id,
+                  childId: child.id,
+                  valences: l.valences,
+                  date: l.date,
+                  productName: l.productName,
+                  lotNumber: l.lotNumber,
+                  source: 'ocr-local',
+                  verifiedByUser: l.verified,
+                  attachmentIds: [],
+                  createdAt: stamp(),
+                  updatedAt: stamp(),
+                })
+              })
+              // La photo d'origine reste attachée : c'est la pièce justificative.
+              await attachToVaccination(id, reading.id)
+            }
+            setReading(null)
+            await onChange()
+          }}
+        />
+      )}
     </div>
   )
 }
 
-function EventRow({ event, onDelete }: { event: VaccinationEvent; onDelete: () => void }) {
+function EventRow({ event, onDelete, onVerify }: {
+  event: VaccinationEvent; onDelete: () => void; onVerify: () => void
+}) {
   const [confirming, setConfirming] = useState(false)
   return (
     <li className="border-line bg-surface rounded-[12px] border p-3.5"
-      style={{ borderLeft: `3px solid ${event.verifiedByUser ? '#2F7A57' : '#B08725'}` }}>
+      style={{ borderLeft: `3px solid ${event.verifiedByUser ? '#1E7351' : '#A87F1F'}` }}>
       <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
+        <div className="flex min-w-0 flex-col gap-1">
           <span className="text-[15px] font-semibold tracking-tight">{humanDate(event.date)}</span>
           <span className="text-ink-muted text-[12.5px]">{event.valences.join(', ')}</span>
           {(event.productName || event.lotNumber) && (
-            <span className="text-ink-faint tnum text-[12px]">
+            <span className="text-ink-faint truncate text-[12px]">
               {event.productName}{event.productName && event.lotNumber ? ' · lot ' : ''}{event.lotNumber}
             </span>
           )}
@@ -128,10 +164,22 @@ function EventRow({ event, onDelete }: { event: VaccinationEvent; onDelete: () =
           </div>
         </div>
       ) : (
-        <button onClick={() => setConfirming(true)}
-          className="text-ink-muted min-h-11 text-[12.5px] font-medium underline">
-          Corriger ou retirer
-        </button>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <button onClick={() => setConfirming(true)}
+            className="text-ink-muted min-h-11 text-[12.5px] font-medium underline">
+            Corriger ou retirer
+          </button>
+          {!event.verifiedByUser && (
+            <button onClick={onVerify}
+              className="border-ok-border bg-ok-bg text-ok inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-[8px] border px-3 text-[12.5px] font-semibold">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1E7351" strokeWidth="2.6"
+                strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Marquer vérifié
+            </button>
+          )}
+        </div>
       )}
     </li>
   )

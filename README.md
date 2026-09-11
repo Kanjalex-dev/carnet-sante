@@ -12,6 +12,7 @@ Application web autonome, déployable sur GitHub Pages.
 - Conserve les photographies des pages du carnet papier, débarrassées de leurs métadonnées EXIF.
 - Chiffre l'ensemble des données sur l'appareil derrière une phrase secrète.
 - Produit un récapitulatif PDF avec les photographies en pages de preuve et un cartouche à faire contresigner.
+- Lit une page de carnet photographiée, localement, et propose les vaccinations trouvées — sans jamais rien enregistrer sans validation.
 
 ## Ce qu'elle ne fait pas
 
@@ -51,8 +52,12 @@ comme sous `/<nom-du-depot>/`, sans configuration.
 | 2 | Référentiel fr-2025, moteur de statut, rattrapage, LMS | fait, 32 tests |
 | 3 | Persistance IndexedDB, chiffrement AES-GCM, effacement | fait, 8 tests |
 | 4 | Onboarding, écran Statut, saisie de dose, réglages | fait |
-| 5 | Photographies du carnet (capture, import, visionneuse) | fait — OCR à faire |
+| 5 | Photographies, lecture OCR locale et écran de validation | fait, 27 tests sur l'analyse |
 | 6 | Récapitulatif PDF avec pages de preuve | fait — export .ics à faire |
 | 7 | Courbes de croissance | math faite, tables OMS à embarquer |
 | 8 | Multi-enfants et fusion co-parent | à faire |
 | 9 | Durcissement, PWA, polices embarquées | à faire |
+
+Revue de mise en page effectuée à 320 px et 390 px : aucun débordement horizontal
+sur les trois onglets, y compris avec un prénom long et des valeurs saisies sans
+espace.

@@ -30,6 +30,16 @@ L'obligation dépend de la date de naissance, jamais de la date du jour :
 | 2018-01-01 | + Coqueluche, Hib, Hépatite B, Pneumocoque, ROR, Méningocoque C |
 | 2025-01-01 | Méningocoque ACWY remplace le C, + Méningocoque B |
 
+## Noms commerciaux — `src/data/products-fr.json`
+
+Liste des vaccins couramment inscrits dans les carnets français, avec les valences
+correspondantes. Elle sert **uniquement** à proposer une lecture : la mention portée
+par le professionnel de santé fait foi, et toute proposition doit être validée à
+l'écran avant d'être enregistrée.
+
+À revoir en même temps que le calendrier : les noms commerciaux changent, des
+produits sortent, d'autres arrivent.
+
 ## Croissance
 
 Les formules LMS sont implémentées dans `src/domain/growth.ts`. **Les tables de

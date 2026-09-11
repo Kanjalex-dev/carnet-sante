@@ -2,38 +2,40 @@
 
 /* Tokens — source unique de vérité. Aucune couleur ne doit exister ailleurs. */
 @theme {
-  --color-paper: #FAF7F8;
-  --color-paper-sunken: #F3EDF0;
+  /* Fond bleu pâle : registre médical, et les cartes blanches s'en détachent
+     nettement — la hiérarchie ne repose plus sur une simple bordure. */
+  --color-paper: #EEF4F9;
+  --color-paper-sunken: #E2EBF4;
   --color-surface: #FFFFFF;
-  --color-surface-soft: #FEFCFD;
+  --color-surface-soft: #F8FBFD;
 
-  --color-ink: #241F26;
-  --color-ink-strong: #443E49;
-  --color-ink-muted: #6B6270;
-  --color-ink-faint: #8C8394;
+  --color-ink: #16202B;
+  --color-ink-strong: #33414F;
+  --color-ink-muted: #5E6E7E;
+  --color-ink-faint: #8496A5;
 
-  --color-line: #E9E1E6;
-  --color-line-soft: #F1EBEE;
-  --color-line-strong: #DCD3DA;
+  --color-line: #D9E4EF;
+  --color-line-soft: #E8EFF6;
+  --color-line-strong: #C2D2E1;
 
-  --color-blue-700: #1F4467;
-  --color-blue-500: #2E5C8A;
-  --color-blue-100: #E7EFF7;
-  --color-rose-700: #A9526F;
+  --color-blue-700: #1B4571;
+  --color-blue-500: #275C94;
+  --color-blue-100: #DDE9F5;
+  --color-rose-700: #A04E6B;
   --color-rose-500: #C46B8B;
-  --color-rose-100: #FCF4F7;
-  --color-rose-border: #EFD9E2;
+  --color-rose-100: #FAEFF3;
+  --color-rose-border: #EDD5DE;
 
-  --color-ok: #2F7A57;
-  --color-ok-bg: #EDF5F0;
-  --color-ok-border: #D3E5DB;
-  --color-due: #96631A;
-  --color-due-bg: #FAF2E3;
-  --color-due-border: #E9DAB9;
-  --color-due-rail: #B08725;
-  --color-late: #BC4626;
-  --color-late-bg: #FCEDE8;
-  --color-late-border: #F3D8CD;
+  --color-ok: #1E7351;
+  --color-ok-bg: #E4F1EB;
+  --color-ok-border: #C3DFD1;
+  --color-due: #8C5D14;
+  --color-due-bg: #FBF1DF;
+  --color-due-border: #E7D5AF;
+  --color-due-rail: #A87F1F;
+  --color-late: #B23D1F;
+  --color-late-bg: #FCE9E3;
+  --color-late-border: #F1D0C4;
 
   --font-display: 'Newsreader', Georgia, 'Times New Roman', serif;
   --font-body: 'Public Sans', system-ui, -apple-system, sans-serif;
@@ -45,6 +47,9 @@
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;
+  /* Un numéro de lot ou un nom de produit saisi sans espace ne doit jamais
+     élargir la page : on coupe dans le mot plutôt que de déborder. */
+  overflow-wrap: anywhere;
   background: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-body);
@@ -52,6 +57,8 @@ body {
   line-height: 1.5;
 }
 .tnum { font-variant-numeric: tabular-nums; }
+/* Les chiffres alignés ne se coupent pas au milieu. */
+.tnum { overflow-wrap: normal; }
 :focus-visible { outline: 2px solid var(--color-blue-500); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
