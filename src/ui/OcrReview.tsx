@@ -1,14 +1,21 @@
 import { useEffect, useState } from 'react'
 import productsData from '../data/products-fr.json'
+import scheduleData from '../data/schedules/fr-2025.json'
 import { parseLines, type ProductSpec, type Proposal } from '../domain/parse'
 import { isISODate, today as todayFn } from '../domain/dates'
+import type { Schedule } from '../domain/types'
 import { type AttachmentMeta, readAttachment } from '../storage/repository'
 import { OcrUnavailableError, preprocess, recognise, releaseOcr } from '../storage/ocr'
 import { toObjectURL } from '../storage/image'
 import { Button } from './atoms'
 import { frDate } from './format'
+import { Explainable } from './Explain'
+import { buildLabelIndex, buildValenceIndex, confidenceExplanation } from './explanations'
 
 const PRODUCTS = (productsData as { products: ProductSpec[] }).products
+const SCHEDULE = scheduleData as Schedule
+const VALENCE_EXPLANATIONS = buildValenceIndex(SCHEDULE)
+const VALENCE_LABELS = buildLabelIndex(SCHEDULE)
 
 export interface AcceptedLine {
   date: string
@@ -276,17 +283,38 @@ function ProposalCard({ row, onChange }: { row: Row; onChange: (patch: Partial<R
             <span className="min-w-0 flex-1 text-[14.5px] leading-snug font-semibold">
               {row.productName || 'Produit inconnu'}
             </span>
-            <span className={`tnum shrink-0 rounded-full border px-2 py-0.5 text-[10.5px] font-bold ${chip}`}>
+            <Explainable
+              explanation={confidenceExplanation(pct)}
+              ariaLabel={`Indice de confiance ${pct} % — voir l'explication`}
+              className={`tnum shrink-0 rounded-full border px-2 py-0.5 text-[10.5px] font-bold no-underline ${chip}`}
+            >
               {pct} %
-            </span>
+            </Explainable>
           </div>
           <span className="text-ink-strong tnum text-[13px] font-medium">
             {row.date ? frDate(row.date) : 'Date à saisir'}
           </span>
-          <span className="text-ink-muted text-[12px] leading-snug">
-            {row.valences.length > 0 ? row.valences.join(', ') : 'Valences à préciser'}
-            {row.lotNumber && ` · lot ${row.lotNumber}`}
-          </span>
+          {row.valences.length > 0 ? (
+            <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
+              {row.valences.map((code) => {
+                const explanation = VALENCE_EXPLANATIONS.get(code)
+                const name = VALENCE_LABELS.get(code) ?? code
+                return (
+                  <li key={code}
+                    className="border-line bg-paper-sunken text-ink-strong rounded-full border px-2 py-0.5 text-[11.5px]">
+                    {explanation
+                      ? <Explainable explanation={explanation}>{name}</Explainable>
+                      : name}
+                  </li>
+                )
+              })}
+            </ul>
+          ) : (
+            <span className="text-ink-muted text-[12px] leading-snug">Vaccins à préciser</span>
+          )}
+          {row.lotNumber && (
+            <span className="text-ink-muted tnum text-[12px] leading-snug">Lot {row.lotNumber}</span>
+          )}
           {row.warnings.length > 0 && (
             <span className="text-due mt-0.5 text-[12px] leading-snug font-medium">
               {row.warnings.join(' · ')}

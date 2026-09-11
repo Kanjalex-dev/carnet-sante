@@ -60,6 +60,8 @@ export interface ValenceSpec {
   code: string
   label: string
   shortLabel: string
+  /** Explication grand public : contre quoi ce vaccin protège. */
+  protects?: string
   mandatoryBirthFrom?: ISODate
   mandatoryBirthUntil?: ISODate
   supersededBy?: string

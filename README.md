@@ -13,6 +13,7 @@ Application web autonome, déployable sur GitHub Pages.
 - Chiffre l'ensemble des données sur l'appareil derrière une phrase secrète.
 - Produit un récapitulatif PDF avec les photographies en pages de preuve et un cartouche à faire contresigner.
 - Lit une page de carnet photographiée, localement, et propose les vaccinations trouvées — sans jamais rien enregistrer sans validation.
+- N'affiche aucun acronyme médical : chaque vaccin porte son nom courant, et un appui ouvre une fiche expliquant contre quoi il protège. Le même geste explique les chiffres affichés.
 
 ## Ce qu'elle ne fait pas
 

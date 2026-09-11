@@ -92,3 +92,19 @@ Défaut corrigé au passage : le compteur de lignes non vérifiées comptait les
 ## La barre de navigation est fixe, et la page lui réserve sa hauteur
 Décision : `position: fixed` plus un `padding-bottom` équivalent sur le contenu.
 Raison : en `sticky`, la barre recouvrait la mention légale en bas de page. Un texte que l'on masque à moitié est pire que pas de texte du tout.
+
+## Aucun acronyme médical nu dans l'interface
+Décision : les vaccins s'affichent sous leur nom courant — « Diphtérie-tétanos-polio », « Haemophilus b », « Rougeole-oreillons-rubéole » — jamais « DTP », « Hib » ou « ROR ». Les codes internes restent dans les données et ne remontent jamais à l'écran.
+Raison : c'est une application grand public. Un parent n'a aucune raison de connaître le jargon, et un libellé qu'on ne comprend pas ne rassure pas, il inquiète.
+Défaut corrigé au passage : l'historique des vaccinations et l'écran de lecture affichaient les codes bruts du référentiel.
+
+## Un seul geste d'explication, pour les mots comme pour les chiffres
+Décision : appuyer sur un élément marqué d'un point d'interrogation ouvre une fiche en bas de l'écran. Même composant, même signal, même fermeture, qu'il s'agisse d'un nom de vaccin, du compteur « X / Y » ou d'un indice de confiance.
+Raison : l'utilisateur apprend le geste une fois. Deux mécanismes différents pour deux besoins identiques, c'est deux choses à apprendre.
+Alternative écartée : l'infobulle au survol. Sur un téléphone, le survol n'existe pas — l'information serait restée inaccessible là où l'application sera le plus utilisée.
+Le déclencheur est un vrai `button` : il est atteignable au clavier et annoncé par un lecteur d'écran, ce qu'un `title` ou un `abbr` ne garantit pas.
+
+## Les explications vivent dans le référentiel, pas dans les composants
+Décision : chaque valence porte un champ `protects` décrivant en français courant ce contre quoi elle protège ; les textes des fiches sont regroupés dans un seul module.
+Raison : ces phrases touchent à la santé. Elles doivent être relues en un seul endroit, versionnées avec le calendrier, et dire la même chose partout où l'utilisateur les rencontre.
+Chaque fiche renvoie explicitement au médecin : l'application décrit, elle ne conseille pas.

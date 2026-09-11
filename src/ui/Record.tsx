@@ -8,7 +8,10 @@ import { OcrReview } from './OcrReview'
 import { buildRecap, type RecapOptions } from '../storage/pdf'
 import { Button, LegalNotice } from './atoms'
 import { PhotoSection } from './Photos'
+import type { Explanation } from './Explain'
 import { frDate as humanDate } from './format'
+import { Explainable } from './Explain'
+import { buildLabelIndex, buildValenceIndex, verifiedExplanation } from './explanations'
 
 
 export function Record({ child, schedule, events, onChange }: {
@@ -20,6 +23,8 @@ export function Record({ child, schedule, events, onChange }: {
   const [exporting, setExporting] = useState(false)
   const [photoKey, setPhotoKey] = useState(0)
   const [reading, setReading] = useState<AttachmentMeta | null>(null)
+  const explanations = useMemo(() => buildValenceIndex(schedule), [schedule])
+  const labels = useMemo(() => buildLabelIndex(schedule), [schedule])
 
   const live = useMemo(
     () => events.filter((e) => !e.deletedAt).sort((a, b) => (a.date < b.date ? 1 : -1)),
@@ -53,7 +58,7 @@ export function Record({ child, schedule, events, onChange }: {
           ) : (
             <ul className="m-0 flex list-none flex-col gap-2 p-0">
               {live.map((e) => (
-                <EventRow key={e.id} event={e}
+                <EventRow key={e.id} event={e} explanations={explanations} labels={labels}
                   onVerify={async () => { await updateVaccination(e.id, { verifiedByUser: true }); await onChange() }}
                   onDelete={async () => { await softDeleteVaccination(e.id); await onChange() }} />
               ))}
@@ -131,8 +136,12 @@ export function Record({ child, schedule, events, onChange }: {
   )
 }
 
-function EventRow({ event, onDelete, onVerify }: {
-  event: VaccinationEvent; onDelete: () => void; onVerify: () => void
+function EventRow({ event, onDelete, onVerify, explanations, labels }: {
+  event: VaccinationEvent
+  onDelete: () => void
+  onVerify: () => void
+  explanations: Map<string, Explanation>
+  labels: Map<string, string>
 }) {
   const [confirming, setConfirming] = useState(false)
   return (
@@ -141,16 +150,32 @@ function EventRow({ event, onDelete, onVerify }: {
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-1">
           <span className="text-[15px] font-semibold tracking-tight">{humanDate(event.date)}</span>
-          <span className="text-ink-muted text-[12.5px]">{event.valences.join(', ')}</span>
+          <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
+            {event.valences.map((code) => {
+              const explanation = explanations.get(code)
+              const name = labels.get(code) ?? code
+              return (
+                <li key={code}
+                  className="border-line bg-paper-sunken text-ink-strong rounded-full border px-2 py-0.5 text-[11.5px]">
+                  {explanation
+                    ? <Explainable explanation={explanation}>{name}</Explainable>
+                    : name}
+                </li>
+              )
+            })}
+          </ul>
           {(event.productName || event.lotNumber) && (
             <span className="text-ink-faint truncate text-[12px]">
               {event.productName}{event.productName && event.lotNumber ? ' · lot ' : ''}{event.lotNumber}
             </span>
           )}
         </div>
-        <span className={`shrink-0 text-[11px] font-bold ${event.verifiedByUser ? 'text-ok' : 'text-due'}`}>
+        <Explainable
+          explanation={verifiedExplanation()}
+          className={`shrink-0 text-[11px] font-bold ${event.verifiedByUser ? 'text-ok' : 'text-due'}`}
+        >
           {event.verifiedByUser ? 'Vérifié' : 'Non vérifié'}
-        </span>
+        </Explainable>
       </div>
       <div className="bg-line-soft my-2.5 h-px" />
       {confirming ? (

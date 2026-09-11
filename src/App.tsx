@@ -11,6 +11,7 @@ import { Status } from './ui/Status'
 import { Record } from './ui/Record'
 import { Settings } from './ui/Settings'
 import { Nav, type Tab } from './ui/Nav'
+import { ExplainProvider } from './ui/Explain'
 import { SetupEncryption, Unlock } from './ui/Vault'
 import type { DoseEntryValue } from './ui/DoseEntry'
 import type { VaccinationEvent } from './domain/types'
@@ -90,6 +91,7 @@ export default function App() {
   }
 
   return (
+    <ExplainProvider>
     <div className="flex min-h-dvh flex-col">
       {/* Réserve la hauteur de la barre fixe : aucun contenu ne passe dessous. */}
       <div className="flex flex-1 flex-col pb-[76px]">
@@ -109,5 +111,6 @@ export default function App() {
       </div>
       <Nav tab={tab} onChange={setTab} />
     </div>
+    </ExplainProvider>
   )
 }

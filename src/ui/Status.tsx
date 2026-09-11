@@ -2,10 +2,13 @@ import { useMemo, useState } from 'react'
 import { addMonths, today as todayFn } from '../domain/dates'
 import { computeStatus, groupByVisit, proposeCatchUp, summarise, upcomingDoses } from '../domain/status'
 import type { DoseGroup } from '../domain/status'
+import type { Explanation } from './Explain'
 import type { Child, Schedule, VaccinationEvent } from '../domain/types'
 import { IconCheck, LegalNotice, StatusPill } from './atoms'
 import { DoseEntry, type DoseEntryValue } from './DoseEntry'
 import { frDate as humanDate, humanAge } from './format'
+import { Explainable } from './Explain'
+import { buildValenceIndex, progressExplanation } from './explanations'
 
 
 export function Status({ child, schedule, events, onRecord }: {
@@ -16,6 +19,7 @@ export function Status({ child, schedule, events, onRecord }: {
 }) {
   const today = todayFn()
   const [entry, setEntry] = useState<DoseGroup | null>(null)
+  const explanations = useMemo(() => buildValenceIndex(schedule), [schedule])
 
   const { summary, soon, catchUp } = useMemo(() => {
     const statuses = computeStatus(schedule, child.birthDate, events, today)
@@ -65,11 +69,12 @@ export function Status({ child, schedule, events, onRecord }: {
           satisfied={summary.mandatorySatisfied}
           total={summary.mandatoryTotal}
           unverified={unverifiedEvents}
+          birthDate={child.birthDate}
         />
 
-        <VisitSection title="En retard" groups={late} onPick={setEntry} />
-        <VisitSection title="À faire maintenant" groups={due} onPick={setEntry} />
-        <VisitSection title="Dans les 3 mois" groups={upcoming} onPick={setEntry} />
+        <VisitSection title="En retard" groups={late} onPick={setEntry} explanations={explanations} />
+        <VisitSection title="À faire maintenant" groups={due} onPick={setEntry} explanations={explanations} />
+        <VisitSection title="Dans les 3 mois" groups={upcoming} onPick={setEntry} explanations={explanations} />
 
         {catchUp.length > 0 && (
           <section className="border-late-border bg-late-bg rounded-[12px] border p-3.5">
@@ -77,7 +82,8 @@ export function Status({ child, schedule, events, onRecord }: {
             <ul className="mt-2 mb-0 flex list-none flex-col gap-1 p-0">
               {catchUp.map((s) => (
                 <li key={`${s.valenceCode}-${s.doseNumber}`} className="text-ink-strong text-[13.5px]">
-                  {s.shortLabel} dose {s.doseNumber} — à partir du <span className="tnum">{humanDate(s.proposedDate)}</span>
+                  {s.shortLabel} — dose {s.doseNumber}, à partir du{' '}
+                  <span className="tnum">{humanDate(s.proposedDate)}</span>
                 </li>
               ))}
             </ul>
@@ -108,8 +114,8 @@ export function Status({ child, schedule, events, onRecord }: {
  * mais « est-ce qu'on est à jour ». Cet indicateur y répond d'un coup d'œil,
  * sans se substituer au détail.
  */
-function Progress({ satisfied, total, unverified }: {
-  satisfied: number; total: number; unverified: number
+function Progress({ satisfied, total, unverified, birthDate }: {
+  satisfied: number; total: number; unverified: number; birthDate: string
 }) {
   const ratio = total === 0 ? 0 : satisfied / total
   const complete = satisfied === total
@@ -119,11 +125,15 @@ function Progress({ satisfied, total, unverified }: {
     }`}>
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-ink-muted m-0 text-[11px] font-bold tracking-[0.09em] uppercase">
-          Obligations vaccinales
+          Vaccins obligatoires à jour
         </h2>
-        <span className={`tnum shrink-0 text-[13px] font-bold ${complete ? 'text-ok' : 'text-ink'}`}>
+        <Explainable
+          explanation={progressExplanation(satisfied, total, birthDate)}
+          ariaLabel={`${satisfied} vaccins obligatoires à jour sur ${total} — voir l'explication`}
+          className={`tnum shrink-0 text-[13px] font-bold ${complete ? 'text-ok' : 'text-ink'}`}
+        >
           {satisfied} / {total}
-        </span>
+        </Explainable>
       </div>
       <div className="bg-line-soft mt-2.5 h-2 overflow-hidden rounded-full" role="img"
         aria-label={`${satisfied} obligations satisfaites sur ${total}`}>
@@ -132,29 +142,36 @@ function Progress({ satisfied, total, unverified }: {
       </div>
       <p className="text-ink-muted m-0 mt-2 text-[12px] leading-snug text-pretty">
         {complete
-          ? "Toutes les obligations sont satisfaites à ce jour."
-          : "Calcul fondé sur le calendrier applicable à la date de naissance de l'enfant."}
+          ? "Tous les vaccins obligatoires sont à jour à ce jour."
+          : "Appuyez sur le chiffre pour comprendre ce qu'il compte."}
         {unverified > 0 && ` ${unverified} vaccination${unverified > 1 ? 's' : ''} importée${unverified > 1 ? 's' : ''} reste${unverified > 1 ? 'nt' : ''} à vérifier.`}
       </p>
     </section>
   )
 }
 
-function VisitSection({ title, groups, onPick }: {
-  title: string; groups: DoseGroup[]; onPick: (g: DoseGroup) => void
+function VisitSection({ title, groups, onPick, explanations }: {
+  title: string
+  groups: DoseGroup[]
+  onPick: (g: DoseGroup) => void
+  explanations: Map<string, Explanation>
 }) {
   if (groups.length === 0) return null
   return (
     <section className="flex flex-col gap-2.5">
       <h2 className="text-ink-muted m-0 text-[11px] font-bold tracking-[0.09em] uppercase">{title}</h2>
-      {groups.map((g) => <VisitCard key={g.key} group={g} onPick={onPick} />)}
+      {groups.map((g) => (
+        <VisitCard key={g.key} group={g} onPick={onPick} explanations={explanations} />
+      ))}
     </section>
   )
 }
 
 const RAIL: Record<string, string> = { late: '#B23D1F', due: '#A87F1F', upcoming: '#C2D2E1' }
 
-function VisitCard({ group, onPick }: { group: DoseGroup; onPick: (g: DoseGroup) => void }) {
+function VisitCard({ group, onPick, explanations }: {
+  group: DoseGroup; onPick: (g: DoseGroup) => void; explanations: Map<string, Explanation>
+}) {
   const detail =
     group.state === 'late' ? `Fenêtre dépassée depuis ${group.daysLate} jours`
     : group.state === 'due' ? `À faire depuis ${group.daysSinceTarget} jours`
@@ -168,7 +185,7 @@ function VisitCard({ group, onPick }: { group: DoseGroup; onPick: (g: DoseGroup)
         <div className="flex min-w-0 flex-col gap-1">
           <h3 className="m-0 text-[16px] font-semibold tracking-tight">Rendez-vous {group.label}</h3>
           <p className="text-ink-muted m-0 text-[13px]">
-            {group.doses.length} valence{group.doses.length > 1 ? 's' : ''}
+            {group.doses.length} vaccin{group.doses.length > 1 ? 's' : ''}
             {mandatory > 0 && ` · ${mandatory} obligatoire${mandatory > 1 ? 's' : ''}`}
           </p>
         </div>
@@ -176,12 +193,23 @@ function VisitCard({ group, onPick }: { group: DoseGroup; onPick: (g: DoseGroup)
       </div>
 
       <ul className="mt-2.5 mb-0 flex list-none flex-wrap gap-1.5 p-0">
-        {group.doses.map((d) => (
-          <li key={`${d.valenceCode}-${d.doseNumber}`}
-            className="border-line bg-paper-sunken text-ink-strong rounded-full border px-2.5 py-1 text-[12px]">
-            {d.shortLabel}<span className="text-ink-faint"> · {d.doseNumber}</span>
-          </li>
-        ))}
+        {group.doses.map((d) => {
+          const explanation = explanations.get(d.valenceCode)
+          const content = (
+            <>
+              {d.shortLabel}
+              <span className="text-ink-faint"> · dose {d.doseNumber}</span>
+            </>
+          )
+          return (
+            <li key={`${d.valenceCode}-${d.doseNumber}`}
+              className="border-line bg-paper-sunken text-ink-strong rounded-full border px-2.5 py-1 text-[12px]">
+              {explanation
+                ? <Explainable explanation={explanation}>{content}</Explainable>
+                : content}
+            </li>
+          )
+        })}
       </ul>
 
       <div className="bg-line-soft my-3 h-px" />

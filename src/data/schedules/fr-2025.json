@@ -1,7 +1,7 @@
 {
   "id": "fr-2025",
   "label": "Calendrier vaccinal français",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "source": "Vaccination Info Service (Santé publique France) — calendrier des vaccinations",
   "sourceUrl": "https://professionnels.vaccination-info-service.fr/",
   "publishedAt": "2025-01-01",
@@ -11,7 +11,8 @@
     {
       "code": "DTP",
       "label": "Diphtérie, tétanos, poliomyélite",
-      "shortLabel": "DTP",
+      "shortLabel": "Diphtérie-tétanos-polio",
+      "protects": "Protège contre trois maladies graves : la diphtérie, une infection de la gorge ; le tétanos, attrapé par une plaie souillée ; et la poliomyélite, qui peut paralyser.",
       "mandatoryBirthFrom": "1900-01-01",
       "doses": [
         { "n": 1, "targetAgeMonths": 2, "minAgeMonths": 2, "maxAgeMonths": 6, "label": "2 mois" },
@@ -25,6 +26,7 @@
       "code": "Coq",
       "label": "Coqueluche",
       "shortLabel": "Coqueluche",
+      "protects": "Protège contre la coqueluche, une toux très longue et dangereuse pour les nourrissons, qui peut les empêcher de respirer.",
       "mandatoryBirthFrom": "2018-01-01",
       "doses": [
         { "n": 1, "targetAgeMonths": 2, "minAgeMonths": 2, "maxAgeMonths": 6, "label": "2 mois" },
@@ -37,7 +39,8 @@
     {
       "code": "Hib",
       "label": "Haemophilus influenzae de type b",
-      "shortLabel": "Hib",
+      "shortLabel": "Haemophilus b",
+      "protects": "Protège contre une bactérie responsable de méningites et d'infections graves chez le jeune enfant. Son nom savant, Haemophilus influenzae de type b, n'a rien à voir avec la grippe.",
       "mandatoryBirthFrom": "2018-01-01",
       "doses": [
         { "n": 1, "targetAgeMonths": 2, "minAgeMonths": 2, "maxAgeMonths": 6, "label": "2 mois" },
@@ -49,6 +52,7 @@
       "code": "HepB",
       "label": "Hépatite B",
       "shortLabel": "Hépatite B",
+      "protects": "Protège contre l'hépatite B, un virus qui attaque le foie et peut rester présent toute la vie.",
       "mandatoryBirthFrom": "2018-01-01",
       "doses": [
         { "n": 1, "targetAgeMonths": 2, "minAgeMonths": 2, "maxAgeMonths": 6, "label": "2 mois" },
@@ -60,6 +64,7 @@
       "code": "Pneumo",
       "label": "Pneumocoque",
       "shortLabel": "Pneumocoque",
+      "protects": "Protège contre le pneumocoque, une bactérie fréquente responsable d'otites, de pneumonies et de méningites.",
       "mandatoryBirthFrom": "2018-01-01",
       "doses": [
         { "n": 1, "targetAgeMonths": 2, "minAgeMonths": 2, "maxAgeMonths": 6, "label": "2 mois" },
@@ -70,7 +75,8 @@
     {
       "code": "ROR",
       "label": "Rougeole, oreillons, rubéole",
-      "shortLabel": "ROR",
+      "shortLabel": "Rougeole-oreillons-rubéole",
+      "protects": "Protège contre la rougeole, les oreillons et la rubéole, trois maladies très contagieuses dont les complications sont parfois sévères.",
       "mandatoryBirthFrom": "2018-01-01",
       "doses": [
         { "n": 1, "targetAgeMonths": 12, "minAgeMonths": 12, "maxAgeMonths": 15, "label": "12 mois" },
@@ -80,7 +86,8 @@
     {
       "code": "MenC",
       "label": "Méningocoque C",
-      "shortLabel": "Méningo C",
+      "shortLabel": "Méningocoque C",
+      "protects": "Protège contre le méningocoque de type C, une bactérie pouvant provoquer une méningite foudroyante. Remplacé par le vaccin ACWY pour les enfants nés à partir de 2025.",
       "mandatoryBirthFrom": "2018-01-01",
       "mandatoryBirthUntil": "2024-12-31",
       "supersededBy": "MenACWY",
@@ -92,7 +99,8 @@
     {
       "code": "MenACWY",
       "label": "Méningocoque ACWY",
-      "shortLabel": "Méningo ACWY",
+      "shortLabel": "Méningocoque ACWY",
+      "protects": "Protège contre quatre types de méningocoques — A, C, W et Y — des bactéries pouvant provoquer une méningite foudroyante.",
       "mandatoryBirthFrom": "2025-01-01",
       "doses": [
         { "n": 1, "targetAgeMonths": 6, "minAgeMonths": 6, "maxAgeMonths": 11, "label": "6 mois" },
@@ -102,7 +110,8 @@
     {
       "code": "MenB",
       "label": "Méningocoque B",
-      "shortLabel": "Méningo B",
+      "shortLabel": "Méningocoque B",
+      "protects": "Protège contre le méningocoque de type B, le plus fréquent en France chez le nourrisson, responsable de méningites graves.",
       "mandatoryBirthFrom": "2025-01-01",
       "doses": [
         { "n": 1, "targetAgeMonths": 3, "minAgeMonths": 2, "maxAgeMonths": 6, "label": "3 mois" },
@@ -114,6 +123,7 @@
       "code": "Rotavirus",
       "label": "Rotavirus",
       "shortLabel": "Rotavirus",
+      "protects": "Protège contre le rotavirus, principale cause de gastro-entérites sévères et de déshydratation chez le nourrisson. Il se donne par la bouche, ce n'est pas une piqûre.",
       "recommended": true,
       "doses": [
         { "n": 1, "targetAgeMonths": 2, "minAgeMonths": 2, "maxAgeMonths": 4, "label": "2 mois" },
@@ -123,7 +133,8 @@
     {
       "code": "HPV",
       "label": "Papillomavirus humains",
-      "shortLabel": "HPV",
+      "shortLabel": "Papillomavirus",
+      "protects": "Protège contre les papillomavirus, responsables de cancers à l'âge adulte. Recommandé pour les filles comme pour les garçons.",
       "recommended": true,
       "doses": [
         { "n": 1, "targetAgeMonths": 132, "minAgeMonths": 132, "maxAgeMonths": 180, "label": "11 ans" },
@@ -133,7 +144,8 @@
     {
       "code": "MenACWY-ado",
       "label": "Méningocoque ACWY — adolescent",
-      "shortLabel": "Méningo ACWY ado",
+      "shortLabel": "Méningocoque ACWY (ado)",
+      "protects": "Rappel contre les méningocoques A, C, W et Y à l'adolescence, période où le risque de contamination remonte.",
       "recommended": true,
       "doses": [
         { "n": 1, "targetAgeMonths": 144, "minAgeMonths": 132, "maxAgeMonths": 168, "label": "11-14 ans" }
