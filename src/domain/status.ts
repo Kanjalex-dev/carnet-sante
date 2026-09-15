@@ -164,46 +164,6 @@ export function summarise(
   }
 }
 
-export interface CatchUpStep {
-  valenceCode: string
-  shortLabel: string
-  doseNumber: number
-  proposedDate: ISODate
-}
-
-/**
- * Propose un rattrapage pour les doses en retard : la première au plus tôt,
- * les suivantes espacées de l'intervalle minimal du calendrier.
- * À faire confirmer par un médecin — l'application ne prescrit rien.
- */
-export function proposeCatchUp(
-  schedule: Schedule,
-  statuses: ValenceStatus[],
-  today: ISODate,
-): CatchUpStep[] {
-  const steps: CatchUpStep[] = []
-  for (const v of statuses) {
-    const late = v.doses.filter((d) => d.state === 'late')
-    if (late.length === 0) continue
-    const spec = schedule.valences.find((s) => s.code === v.code)
-    let cursor = today
-    for (const dose of late) {
-      const interval = spec?.doses.find((d) => d.n === dose.doseNumber)?.minIntervalDays
-      if (steps.length && interval !== undefined && steps[steps.length - 1].valenceCode === v.code) {
-        cursor = addDays(cursor, interval)
-      }
-      steps.push({
-        valenceCode: v.code,
-        shortLabel: v.shortLabel,
-        doseNumber: dose.doseNumber,
-        proposedDate: cursor,
-      })
-    }
-  }
-  return steps
-}
-
-
 export interface DoseGroup {
   /** Clé stable : date cible commune. */
   key: ISODate

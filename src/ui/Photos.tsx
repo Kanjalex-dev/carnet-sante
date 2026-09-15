@@ -221,3 +221,96 @@ function Viewer({ meta, onClose, onDelete, onRead }: {
     </div>
   )
 }
+
+
+/**
+ * Sélecteur de page : sert à rattacher une photo déjà enregistrée à une
+ * vaccination. Une photo peut justifier plusieurs injections d'un même
+ * rendez-vous, donc on ne la déplace pas — on l'associe.
+ */
+export function PhotoPicker({ childId, attachedIds, onPick, onCancel }: {
+  childId: string
+  attachedIds: string[]
+  onPick: (id: string) => void
+  onCancel: () => void
+}) {
+  const [items, setItems] = useState<AttachmentMeta[]>([])
+  useEffect(() => { void listAttachments(childId).then(setItems) }, [childId])
+
+  const available = items.filter((a) => !attachedIds.includes(a.id))
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end justify-center" role="dialog" aria-modal="true"
+      aria-label="Choisir une page du carnet">
+      <button aria-label="Fermer" onClick={onCancel} className="absolute inset-0 block bg-black/40" />
+      <div className="bg-paper relative max-h-[80vh] w-full max-w-[440px] overflow-y-auto rounded-t-2xl px-5 pt-4 pb-7">
+        <div className="bg-line-strong mx-auto mb-4 h-1 w-10 rounded-full" aria-hidden="true" />
+        <h2 className="font-display m-0 text-[20px] leading-tight font-medium tracking-tight">
+          Joindre une page du carnet
+        </h2>
+        <p className="text-ink-muted mt-1 mb-4 text-[13px] leading-snug text-pretty">
+          Choisissez la page où cette vaccination est inscrite. Elle servira de preuve dans le
+          récapitulatif.
+        </p>
+
+        {available.length === 0 ? (
+          <p className="border-line bg-surface text-ink-muted m-0 rounded-[12px] border px-3.5 py-4 text-[13px] leading-snug text-pretty">
+            {items.length === 0
+              ? "Aucune page enregistrée. Photographiez d'abord le carnet depuis l'onglet Carnet."
+              : 'Toutes les pages enregistrées sont déjà jointes à cette vaccination.'}
+          </p>
+        ) : (
+          <ul className="m-0 grid list-none grid-cols-3 gap-2.5 p-0">
+            {available.map((a) => <Thumb key={a.id} meta={a} onOpen={() => onPick(a.id)} />)}
+          </ul>
+        )}
+
+        <button onClick={onCancel}
+          className="border-line-strong bg-surface text-ink-strong mt-5 flex min-h-11 w-full items-center justify-center rounded-[8px] border text-[14px] font-semibold">
+          Annuler
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/** Vignettes des pages jointes à une vaccination, en petit format. */
+export function AttachedThumbs({ ids, onRemove }: { ids: string[]; onRemove?: (id: string) => void }) {
+  const [metas, setMetas] = useState<AttachmentMeta[]>([])
+  useEffect(() => {
+    let alive = true
+    void (async () => {
+      const all: AttachmentMeta[] = []
+      for (const id of ids) {
+        const bytes = await readAttachment(id)
+        if (bytes) all.push({ id } as AttachmentMeta)
+      }
+      if (alive) setMetas(all)
+    })()
+    return () => { alive = false }
+  }, [ids.join(',')])
+
+  if (metas.length === 0) return null
+  return (
+    <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
+      {metas.map((m) => <MiniThumb key={m.id} id={m.id} onRemove={onRemove} />)}
+    </ul>
+  )
+}
+
+function MiniThumb({ id, onRemove }: { id: string; onRemove?: (id: string) => void }) {
+  const url = useImageURL(id, 'image/jpeg')
+  return (
+    <li className="relative">
+      <span className="border-line bg-paper-sunken block h-14 w-11 overflow-hidden rounded-[6px] border">
+        {url && <img src={url} alt="Page jointe" className="h-full w-full object-cover" />}
+      </span>
+      {onRemove && (
+        <button onClick={() => onRemove(id)} aria-label="Détacher cette page"
+          className="border-line bg-surface text-ink-muted absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full border text-[13px] leading-none">
+          ×
+        </button>
+      )}
+    </li>
+  )
+}

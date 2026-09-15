@@ -4,13 +4,15 @@ import { type LockState, attachmentUsage } from '../storage/repository'
 import { formatBytes } from '../storage/image'
 import { frDate } from './format'
 import { Button, LegalNotice } from './atoms'
+import { ShareSection } from './Share'
 
-export function Settings({ child, schedule, lockState, onSetupEncryption, onLock }: {
+export function Settings({ child, schedule, lockState, onSetupEncryption, onLock, onMerged }: {
   child: Child
   schedule: Schedule
   lockState: LockState
   onSetupEncryption: () => void
   onLock: () => void
+  onMerged: () => Promise<void>
 }) {
   const [usage, setUsage] = useState({ count: 0, bytes: 0 })
   useEffect(() => { void attachmentUsage().then(setUsage) }, [])
@@ -57,6 +59,8 @@ export function Settings({ child, schedule, lockState, onSetupEncryption, onLock
             <Button full variant="secondary" onClick={onLock}>Verrouiller maintenant</Button>
           </div>
         )}
+
+        <ShareSection schedule={schedule} onMerged={onMerged} />
 
         <Section title="Source des données">
           <p className="text-ink-muted m-0 px-3.5 py-3 text-[12.5px] leading-snug text-pretty">

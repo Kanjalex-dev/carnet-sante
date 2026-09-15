@@ -1,12 +1,11 @@
 {
   "id": "fr-2025",
   "label": "Calendrier vaccinal français",
-  "schemaVersion": 2,
-  "source": "Vaccination Info Service (Santé publique France) — calendrier des vaccinations",
-  "sourceUrl": "https://professionnels.vaccination-info-service.fr/",
+  "schemaVersion": 3,
+  "source": "Ministère de la Santé — nouvelles obligations vaccinales méningocoques B et ACWY ; Vaccination Info Service (Santé publique France)",
+  "sourceUrl": "https://sante.gouv.fr/soins-et-maladies/maladies/maladies-de-l-enfant/article/nouvelles-obligations-vaccinales-meningocoques-b-et-acwy",
   "publishedAt": "2025-01-01",
-  "checkedAt": "2026-09-10",
-  "warning": "Données à faire confirmer par un professionnel de santé avant usage réel. Le schéma du méningocoque B fait l'objet de présentations divergentes selon les sources (3-5-12 mois retenu ici, 2-4-12 mois ailleurs).",
+  "checkedAt": "2026-09-11",
   "valences": [
     {
       "code": "DTP",
@@ -15,11 +14,43 @@
       "protects": "Protège contre trois maladies graves : la diphtérie, une infection de la gorge ; le tétanos, attrapé par une plaie souillée ; et la poliomyélite, qui peut paralyser.",
       "mandatoryBirthFrom": "1900-01-01",
       "doses": [
-        { "n": 1, "targetAgeMonths": 2, "minAgeMonths": 2, "maxAgeMonths": 6, "label": "2 mois" },
-        { "n": 2, "targetAgeMonths": 4, "minAgeMonths": 3, "maxAgeMonths": 11, "minIntervalDays": 56, "label": "4 mois" },
-        { "n": 3, "targetAgeMonths": 11, "minAgeMonths": 10, "maxAgeMonths": 18, "minIntervalDays": 168, "label": "11 mois" },
-        { "n": 4, "targetAgeMonths": 72, "minAgeMonths": 66, "maxAgeMonths": 84, "label": "6 ans" },
-        { "n": 5, "targetAgeMonths": 144, "minAgeMonths": 132, "maxAgeMonths": 156, "label": "11-13 ans" }
+        {
+          "n": 1,
+          "targetAgeMonths": 2,
+          "minAgeMonths": 2,
+          "maxAgeMonths": 6,
+          "label": "2 mois"
+        },
+        {
+          "n": 2,
+          "targetAgeMonths": 4,
+          "minAgeMonths": 3,
+          "maxAgeMonths": 11,
+          "minIntervalDays": 56,
+          "label": "4 mois"
+        },
+        {
+          "n": 3,
+          "targetAgeMonths": 11,
+          "minAgeMonths": 10,
+          "maxAgeMonths": 18,
+          "minIntervalDays": 168,
+          "label": "11 mois"
+        },
+        {
+          "n": 4,
+          "targetAgeMonths": 72,
+          "minAgeMonths": 66,
+          "maxAgeMonths": 84,
+          "label": "6 ans"
+        },
+        {
+          "n": 5,
+          "targetAgeMonths": 144,
+          "minAgeMonths": 132,
+          "maxAgeMonths": 156,
+          "label": "11-13 ans"
+        }
       ]
     },
     {
@@ -29,11 +60,43 @@
       "protects": "Protège contre la coqueluche, une toux très longue et dangereuse pour les nourrissons, qui peut les empêcher de respirer.",
       "mandatoryBirthFrom": "2018-01-01",
       "doses": [
-        { "n": 1, "targetAgeMonths": 2, "minAgeMonths": 2, "maxAgeMonths": 6, "label": "2 mois" },
-        { "n": 2, "targetAgeMonths": 4, "minAgeMonths": 3, "maxAgeMonths": 11, "minIntervalDays": 56, "label": "4 mois" },
-        { "n": 3, "targetAgeMonths": 11, "minAgeMonths": 10, "maxAgeMonths": 18, "minIntervalDays": 168, "label": "11 mois" },
-        { "n": 4, "targetAgeMonths": 72, "minAgeMonths": 66, "maxAgeMonths": 84, "label": "6 ans" },
-        { "n": 5, "targetAgeMonths": 144, "minAgeMonths": 132, "maxAgeMonths": 156, "label": "11-13 ans" }
+        {
+          "n": 1,
+          "targetAgeMonths": 2,
+          "minAgeMonths": 2,
+          "maxAgeMonths": 6,
+          "label": "2 mois"
+        },
+        {
+          "n": 2,
+          "targetAgeMonths": 4,
+          "minAgeMonths": 3,
+          "maxAgeMonths": 11,
+          "minIntervalDays": 56,
+          "label": "4 mois"
+        },
+        {
+          "n": 3,
+          "targetAgeMonths": 11,
+          "minAgeMonths": 10,
+          "maxAgeMonths": 18,
+          "minIntervalDays": 168,
+          "label": "11 mois"
+        },
+        {
+          "n": 4,
+          "targetAgeMonths": 72,
+          "minAgeMonths": 66,
+          "maxAgeMonths": 84,
+          "label": "6 ans"
+        },
+        {
+          "n": 5,
+          "targetAgeMonths": 144,
+          "minAgeMonths": 132,
+          "maxAgeMonths": 156,
+          "label": "11-13 ans"
+        }
       ]
     },
     {
@@ -43,9 +106,29 @@
       "protects": "Protège contre une bactérie responsable de méningites et d'infections graves chez le jeune enfant. Son nom savant, Haemophilus influenzae de type b, n'a rien à voir avec la grippe.",
       "mandatoryBirthFrom": "2018-01-01",
       "doses": [
-        { "n": 1, "targetAgeMonths": 2, "minAgeMonths": 2, "maxAgeMonths": 6, "label": "2 mois" },
-        { "n": 2, "targetAgeMonths": 4, "minAgeMonths": 3, "maxAgeMonths": 11, "minIntervalDays": 56, "label": "4 mois" },
-        { "n": 3, "targetAgeMonths": 11, "minAgeMonths": 10, "maxAgeMonths": 18, "minIntervalDays": 168, "label": "11 mois" }
+        {
+          "n": 1,
+          "targetAgeMonths": 2,
+          "minAgeMonths": 2,
+          "maxAgeMonths": 6,
+          "label": "2 mois"
+        },
+        {
+          "n": 2,
+          "targetAgeMonths": 4,
+          "minAgeMonths": 3,
+          "maxAgeMonths": 11,
+          "minIntervalDays": 56,
+          "label": "4 mois"
+        },
+        {
+          "n": 3,
+          "targetAgeMonths": 11,
+          "minAgeMonths": 10,
+          "maxAgeMonths": 18,
+          "minIntervalDays": 168,
+          "label": "11 mois"
+        }
       ]
     },
     {
@@ -55,9 +138,29 @@
       "protects": "Protège contre l'hépatite B, un virus qui attaque le foie et peut rester présent toute la vie.",
       "mandatoryBirthFrom": "2018-01-01",
       "doses": [
-        { "n": 1, "targetAgeMonths": 2, "minAgeMonths": 2, "maxAgeMonths": 6, "label": "2 mois" },
-        { "n": 2, "targetAgeMonths": 4, "minAgeMonths": 3, "maxAgeMonths": 11, "minIntervalDays": 56, "label": "4 mois" },
-        { "n": 3, "targetAgeMonths": 11, "minAgeMonths": 10, "maxAgeMonths": 18, "minIntervalDays": 168, "label": "11 mois" }
+        {
+          "n": 1,
+          "targetAgeMonths": 2,
+          "minAgeMonths": 2,
+          "maxAgeMonths": 6,
+          "label": "2 mois"
+        },
+        {
+          "n": 2,
+          "targetAgeMonths": 4,
+          "minAgeMonths": 3,
+          "maxAgeMonths": 11,
+          "minIntervalDays": 56,
+          "label": "4 mois"
+        },
+        {
+          "n": 3,
+          "targetAgeMonths": 11,
+          "minAgeMonths": 10,
+          "maxAgeMonths": 18,
+          "minIntervalDays": 168,
+          "label": "11 mois"
+        }
       ]
     },
     {
@@ -67,9 +170,29 @@
       "protects": "Protège contre le pneumocoque, une bactérie fréquente responsable d'otites, de pneumonies et de méningites.",
       "mandatoryBirthFrom": "2018-01-01",
       "doses": [
-        { "n": 1, "targetAgeMonths": 2, "minAgeMonths": 2, "maxAgeMonths": 6, "label": "2 mois" },
-        { "n": 2, "targetAgeMonths": 4, "minAgeMonths": 3, "maxAgeMonths": 11, "minIntervalDays": 56, "label": "4 mois" },
-        { "n": 3, "targetAgeMonths": 11, "minAgeMonths": 10, "maxAgeMonths": 18, "minIntervalDays": 168, "label": "11 mois" }
+        {
+          "n": 1,
+          "targetAgeMonths": 2,
+          "minAgeMonths": 2,
+          "maxAgeMonths": 6,
+          "label": "2 mois"
+        },
+        {
+          "n": 2,
+          "targetAgeMonths": 4,
+          "minAgeMonths": 3,
+          "maxAgeMonths": 11,
+          "minIntervalDays": 56,
+          "label": "4 mois"
+        },
+        {
+          "n": 3,
+          "targetAgeMonths": 11,
+          "minAgeMonths": 10,
+          "maxAgeMonths": 18,
+          "minIntervalDays": 168,
+          "label": "11 mois"
+        }
       ]
     },
     {
@@ -79,8 +202,21 @@
       "protects": "Protège contre la rougeole, les oreillons et la rubéole, trois maladies très contagieuses dont les complications sont parfois sévères.",
       "mandatoryBirthFrom": "2018-01-01",
       "doses": [
-        { "n": 1, "targetAgeMonths": 12, "minAgeMonths": 12, "maxAgeMonths": 15, "label": "12 mois" },
-        { "n": 2, "targetAgeMonths": 17, "minAgeMonths": 16, "maxAgeMonths": 18, "minIntervalDays": 30, "label": "16-18 mois" }
+        {
+          "n": 1,
+          "targetAgeMonths": 12,
+          "minAgeMonths": 12,
+          "maxAgeMonths": 15,
+          "label": "12 mois"
+        },
+        {
+          "n": 2,
+          "targetAgeMonths": 17,
+          "minAgeMonths": 16,
+          "maxAgeMonths": 18,
+          "minIntervalDays": 30,
+          "label": "16-18 mois"
+        }
       ]
     },
     {
@@ -92,8 +228,21 @@
       "mandatoryBirthUntil": "2024-12-31",
       "supersededBy": "MenACWY",
       "doses": [
-        { "n": 1, "targetAgeMonths": 5, "minAgeMonths": 5, "maxAgeMonths": 11, "label": "5 mois" },
-        { "n": 2, "targetAgeMonths": 12, "minAgeMonths": 12, "maxAgeMonths": 18, "minIntervalDays": 56, "label": "12 mois" }
+        {
+          "n": 1,
+          "targetAgeMonths": 5,
+          "minAgeMonths": 5,
+          "maxAgeMonths": 11,
+          "label": "5 mois"
+        },
+        {
+          "n": 2,
+          "targetAgeMonths": 12,
+          "minAgeMonths": 12,
+          "maxAgeMonths": 18,
+          "minIntervalDays": 56,
+          "label": "12 mois"
+        }
       ]
     },
     {
@@ -103,8 +252,21 @@
       "protects": "Protège contre quatre types de méningocoques — A, C, W et Y — des bactéries pouvant provoquer une méningite foudroyante.",
       "mandatoryBirthFrom": "2025-01-01",
       "doses": [
-        { "n": 1, "targetAgeMonths": 6, "minAgeMonths": 6, "maxAgeMonths": 11, "label": "6 mois" },
-        { "n": 2, "targetAgeMonths": 12, "minAgeMonths": 12, "maxAgeMonths": 18, "minIntervalDays": 56, "label": "12 mois" }
+        {
+          "n": 1,
+          "targetAgeMonths": 6,
+          "minAgeMonths": 6,
+          "maxAgeMonths": 11,
+          "label": "6 mois"
+        },
+        {
+          "n": 2,
+          "targetAgeMonths": 12,
+          "minAgeMonths": 12,
+          "maxAgeMonths": 18,
+          "minIntervalDays": 56,
+          "label": "12 mois"
+        }
       ]
     },
     {
@@ -114,9 +276,71 @@
       "protects": "Protège contre le méningocoque de type B, le plus fréquent en France chez le nourrisson, responsable de méningites graves.",
       "mandatoryBirthFrom": "2025-01-01",
       "doses": [
-        { "n": 1, "targetAgeMonths": 3, "minAgeMonths": 2, "maxAgeMonths": 6, "label": "3 mois" },
-        { "n": 2, "targetAgeMonths": 5, "minAgeMonths": 4, "maxAgeMonths": 11, "minIntervalDays": 56, "label": "5 mois" },
-        { "n": 3, "targetAgeMonths": 12, "minAgeMonths": 12, "maxAgeMonths": 18, "minIntervalDays": 168, "label": "12 mois" }
+        {
+          "n": 1,
+          "targetAgeMonths": 3,
+          "minAgeMonths": 2,
+          "maxAgeMonths": 6,
+          "label": "3 mois"
+        },
+        {
+          "n": 2,
+          "targetAgeMonths": 5,
+          "minAgeMonths": 4,
+          "maxAgeMonths": 11,
+          "minIntervalDays": 56,
+          "label": "5 mois"
+        },
+        {
+          "n": 3,
+          "targetAgeMonths": 12,
+          "minAgeMonths": 12,
+          "maxAgeMonths": 18,
+          "minIntervalDays": 168,
+          "label": "12 mois (rappel)"
+        }
+      ],
+      "catchUp": [
+        {
+          "fromAgeMonths": 6,
+          "toAgeMonths": 11,
+          "primaryDoses": 2,
+          "minIntervalDays": 56,
+          "booster": true,
+          "boosterLabel": "rappel au cours de la 2ᵉ année de vie",
+          "boosterMinAgeMonths": 12,
+          "boosterMaxAgeMonths": 24,
+          "label": "Nourrisson de 6 à 11 mois"
+        },
+        {
+          "fromAgeMonths": 12,
+          "toAgeMonths": 23,
+          "primaryDoses": 2,
+          "minIntervalDays": 56,
+          "booster": true,
+          "boosterLabel": "rappel 12 à 23 mois après la primovaccination",
+          "boosterMinIntervalDays": 365,
+          "label": "Enfant de 12 à 23 mois"
+        },
+        {
+          "fromAgeMonths": 24,
+          "toAgeMonths": 59,
+          "primaryDoses": 2,
+          "minIntervalDays": 28,
+          "booster": false,
+          "note": "Rattrapage obligatoire à réaliser avant le 5ᵉ anniversaire.",
+          "label": "Enfant de 2 à 4 ans révolus"
+        },
+        {
+          "fromAgeMonths": 180,
+          "toAgeMonths": 299,
+          "primaryDoses": 2,
+          "minIntervalDays": 28,
+          "booster": false,
+          "recommendedOnly": true,
+          "note": "Recommandé, non obligatoire. Vaccin Bexsero ou Trumenba.",
+          "label": "Adolescent ou jeune adulte de 15 à 24 ans révolus"
+        }
       ]
     },
     {
@@ -126,8 +350,21 @@
       "protects": "Protège contre le rotavirus, principale cause de gastro-entérites sévères et de déshydratation chez le nourrisson. Il se donne par la bouche, ce n'est pas une piqûre.",
       "recommended": true,
       "doses": [
-        { "n": 1, "targetAgeMonths": 2, "minAgeMonths": 2, "maxAgeMonths": 4, "label": "2 mois" },
-        { "n": 2, "targetAgeMonths": 3, "minAgeMonths": 3, "maxAgeMonths": 6, "minIntervalDays": 28, "label": "3-4 mois" }
+        {
+          "n": 1,
+          "targetAgeMonths": 2,
+          "minAgeMonths": 2,
+          "maxAgeMonths": 4,
+          "label": "2 mois"
+        },
+        {
+          "n": 2,
+          "targetAgeMonths": 3,
+          "minAgeMonths": 3,
+          "maxAgeMonths": 6,
+          "minIntervalDays": 28,
+          "label": "3-4 mois"
+        }
       ]
     },
     {
@@ -137,8 +374,21 @@
       "protects": "Protège contre les papillomavirus, responsables de cancers à l'âge adulte. Recommandé pour les filles comme pour les garçons.",
       "recommended": true,
       "doses": [
-        { "n": 1, "targetAgeMonths": 132, "minAgeMonths": 132, "maxAgeMonths": 180, "label": "11 ans" },
-        { "n": 2, "targetAgeMonths": 138, "minAgeMonths": 137, "maxAgeMonths": 186, "minIntervalDays": 150, "label": "6 mois après" }
+        {
+          "n": 1,
+          "targetAgeMonths": 132,
+          "minAgeMonths": 132,
+          "maxAgeMonths": 180,
+          "label": "11 ans"
+        },
+        {
+          "n": 2,
+          "targetAgeMonths": 138,
+          "minAgeMonths": 137,
+          "maxAgeMonths": 186,
+          "minIntervalDays": 150,
+          "label": "6 mois après"
+        }
       ]
     },
     {
@@ -148,7 +398,13 @@
       "protects": "Rappel contre les méningocoques A, C, W et Y à l'adolescence, période où le risque de contamination remonte.",
       "recommended": true,
       "doses": [
-        { "n": 1, "targetAgeMonths": 144, "minAgeMonths": 132, "maxAgeMonths": 168, "label": "11-14 ans" }
+        {
+          "n": 1,
+          "targetAgeMonths": 144,
+          "minAgeMonths": 132,
+          "maxAgeMonths": 168,
+          "label": "11-14 ans"
+        }
       ]
     }
   ]

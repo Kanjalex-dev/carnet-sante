@@ -4,21 +4,26 @@
 
 - **Source** : Vaccination Info Service (Santé publique France), calendrier des vaccinations.
 - **Version** : `fr-2025`, publiée au 1er janvier 2025.
-- **Dernière vérification** : 10 septembre 2026.
+- **Dernière vérification** : 11 septembre 2026.
 
-### Point à confirmer avant tout usage réel
+### Méningocoque B — schéma retenu
 
-Deux sources consultées présentent des schémas différents pour le
-**méningocoque B** :
+Une divergence entre sources a été tranchée sur le calendrier du ministère de
+la Santé : **3 doses — 3 mois, 5 mois, rappel à 12 mois** (Bexsero). Le champ
+`warning` du fichier a été retiré en conséquence.
 
-| Source | Schéma retenu |
+Quatre schémas de rattrapage sont également codés, avec leurs bornes d'âge et
+leurs intervalles minimaux :
+
+| Âge au début du rattrapage | Schéma |
 |---|---|
-| Vaccination Info Service (retenu ici) | 3 mois, 5 mois, rappel 12 mois |
-| Presse santé / groupes de cliniques | 2 mois, 4 mois, rappel 12 mois |
+| 6 à 11 mois | 2 doses espacées d'au moins 2 mois + rappel au cours de la 2ᵉ année |
+| 12 à 23 mois | 2 doses espacées d'au moins 2 mois + rappel 12 à 23 mois après |
+| 2 à 4 ans révolus | 2 doses espacées d'au moins 1 mois — obligatoire avant le 5ᵉ anniversaire |
+| 15 à 24 ans révolus | 2 doses espacées d'au moins 1 mois — recommandé, non obligatoire |
 
-Le fichier JSON retient le premier et porte un champ `warning`. **Ce point doit
-être tranché avec un professionnel de santé ou le calendrier officiel du
-ministère avant que l'application ne soit utilisée pour de vrai.**
+Ces règles vivent dans le référentiel (`catchUp`), jamais dans le code : le
+moteur de rattrapage les applique sans en connaître le contenu.
 
 ### Cohortes
 
@@ -52,3 +57,17 @@ ne peut être affichée tant qu'elles ne le sont pas.
 2. Créer un nouveau fichier `fr-<année>.json` plutôt que modifier l'ancien — les enfants déjà suivis doivent conserver le référentiel de leur cohorte.
 3. Mettre à jour `checkedAt` et ce document.
 4. Ajouter un test de cohorte pour toute nouvelle bascule d'obligation.
+
+
+## Courbes de croissance — tables OMS
+
+- **Source** : WHO Child Growth Standards, tables LMS étendues, via le paquet
+  `who-growth-standards` (MIT) qui les embarque telles quelles.
+- **Portée** : 0 à 5 ans (1856 jours). Au-delà, les mesures sont conservées mais
+  ne sont plus placées sur la courbe — une autre référence s'applique.
+- Le calcul se fait sur l'appareil. Aucune mesure d'enfant ne sort du navigateur.
+- L'application **situe**, elle n'interprète pas : un enfant durablement au 10ᵉ
+  centile peut se porter parfaitement bien. Ce jugement appartient au médecin.
+- Vérifié contre quatre valeurs publiées avant d'être retenu (poids médian fille
+  3,2 kg à la naissance et 8,9 kg à 12 mois ; taille 74,0 cm à 12 mois ;
+  périmètre crânien garçon 46,1 cm à 12 mois).

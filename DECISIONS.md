@@ -108,3 +108,28 @@ Le déclencheur est un vrai `button` : il est atteignable au clavier et annoncé
 Décision : chaque valence porte un champ `protects` décrivant en français courant ce contre quoi elle protège ; les textes des fiches sont regroupés dans un seul module.
 Raison : ces phrases touchent à la santé. Elles doivent être relues en un seul endroit, versionnées avec le calendrier, et dire la même chose partout où l'utilisateur les rencontre.
 Chaque fiche renvoie explicitement au médecin : l'application décrit, elle ne conseille pas.
+
+## Le rattrapage vient du référentiel, pas du code
+Décision : les schémas de rattrapage du méningocoque B — quatre tranches d'âge, chacune avec son nombre de doses, ses intervalles et son rappel — sont décrits dans `fr-2025.json`. Le moteur les applique sans rien savoir de leur contenu.
+Raison : ces règles changent, et elles touchent à la santé. Une règle médicale codée en dur dans un `if` est une règle qu'on ne peut ni relire, ni versionner, ni corriger sans redéployer.
+Défaut corrigé au passage : un second moteur de rattrapage, naïf, décalait simplement les doses manquées. Deux moteurs médicaux qui se contredisent valent moins qu'un seul — l'ancien a été supprimé.
+
+## Les courbes de croissance s'appuient sur les tables OMS, pas sur une approximation
+Décision : le paquet `who-growth-standards` embarque les tables LMS officielles ; l'application ne réimplémente pas la formule et retrouve l'écart-type d'une mesure par dichotomie sur la courbe de référence.
+Raison : l'entrée est le poids d'un nourrisson. Une approximation des courbes produirait des réponses fausses avec assurance. Les valeurs ont été vérifiées contre quatre repères publiés avant d'être retenues.
+L'écran situe et ne juge jamais : « 61ᵉ centile », jamais « bon » ou « insuffisant ». Le module porte cette phrase en commentaire, pour que la prochaine personne ne soit pas tentée d'ajouter un verdict.
+
+## Trois indicateurs, un seul axe à la fois
+Décision : poids, taille et périmètre crânien se choisissent par onglet ; jamais deux échelles sur un même graphique.
+Raison : deux axes verticaux sur un même tracé laissent croire à une relation entre deux grandeurs qui n'en ont aucune. Une série unique se passe de légende : les couloirs sont nommés au bout des courbes (+2 ET, médiane, −2 ET).
+
+## La fusion co-parent passe par un fichier, et n'écrit rien sans arbitrage
+Décision : un fichier `.carnet` chiffré part d'un appareil, arrive sur l'autre, et ouvre un aperçu ligne par ligne — ajout, modification, divergence, doublon probable — que la personne tranche avant toute écriture.
+Raison : sans serveur, il n'y a pas d'historique commun ; rien ne permet de décider laquelle des deux versions est la bonne. Une règle « le plus récent gagne » appliquée en silence effacerait le travail de l'autre parent. Le plus récent n'est ici qu'une proposition par défaut.
+Le fichier est toujours chiffré, même quand le coffre local ne l'est pas : il circule par messagerie. Sa phrase est indépendante de celle de l'application, et son nom ne contient pas le prénom de l'enfant.
+Les photographies n'y figurent pas : c'est ce qu'il y a de plus identifiant, et un fichier de plusieurs dizaines de mégaoctets circule mal.
+Défaut corrigé au passage : deux versions ne différant que par le numéro de lot s'affichaient à l'identique dans l'aperçu — on arbitrait à l'aveugle. Le lot fait désormais partie de la description.
+
+## Le même enfant, deux identifiants
+Décision : à l'import, les enfants sont rapprochés sur prénom (accents et casse ignorés), date de naissance et sexe ; les vaccinations reçues sont rattachées à l'enfant local.
+Raison : chaque parent a créé son carnet de son côté. Sans ce rapprochement, la fusion produirait deux enfants au lieu d'un — et un carnet coupé en deux.

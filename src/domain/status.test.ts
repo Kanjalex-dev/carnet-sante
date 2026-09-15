@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import schedule from '../data/schedules/fr-2025.json'
 import type { Schedule, VaccinationEvent } from './types'
 import {
-  computeStatus, groupByVisit, proposeCatchUp, resolveValence, summarise, upcomingDoses,
+  computeStatus, groupByVisit, resolveValence, summarise, upcomingDoses,
 } from './status'
 
 const fr = schedule as Schedule
@@ -134,15 +134,6 @@ describe('horizon et synthèse', () => {
     expect(sum.ageMonths).toBe(13)
     expect(sum.mandatoryTotal).toBe(8)
     expect(sum.dueSoonCount).toBeGreaterThan(0)
-  })
-})
-
-describe('rattrapage', () => {
-  it('propose une date pour chaque dose en retard, jamais dans le passé', () => {
-    const s = computeStatus(fr, '2023-01-10', [], TODAY)
-    const steps = proposeCatchUp(fr, s, TODAY)
-    expect(steps.length).toBeGreaterThan(0)
-    expect(steps.every((st) => st.proposedDate >= TODAY)).toBe(true)
   })
 })
 

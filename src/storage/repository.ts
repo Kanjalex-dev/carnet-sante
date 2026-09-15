@@ -217,6 +217,15 @@ export async function attachToVaccination(eventId: string, attachmentId: string)
   })
 }
 
+export async function detachFromVaccination(eventId: string, attachmentId: string): Promise<void> {
+  await mutate((v) => {
+    const e = v.vaccinations.find((x) => x.id === eventId)
+    if (!e) return
+    e.attachmentIds = e.attachmentIds.filter((a) => a !== attachmentId)
+    e.updatedAt = stamp()
+  })
+}
+
 export async function wipeAll(): Promise<void> {
   key = null
   cache = null

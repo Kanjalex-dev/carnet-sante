@@ -9,12 +9,13 @@ import {
 import { Onboarding } from './ui/Onboarding'
 import { Status } from './ui/Status'
 import { Record } from './ui/Record'
+import { Growth, type MeasureInput } from './ui/Growth'
 import { Settings } from './ui/Settings'
 import { Nav, type Tab } from './ui/Nav'
 import { ExplainProvider } from './ui/Explain'
 import { SetupEncryption, Unlock } from './ui/Vault'
 import type { DoseEntryValue } from './ui/DoseEntry'
-import type { VaccinationEvent } from './domain/types'
+import type { GrowthMeasure, VaccinationEvent } from './domain/types'
 
 const schedule = scheduleData as Schedule
 
@@ -23,17 +24,19 @@ export default function App() {
   const [state, setState] = useState<LockState>('plain')
   const [child, setChild] = useState<Child | null>(null)
   const [events, setEvents] = useState<VaccinationEvent[]>([])
+  const [measures, setMeasures] = useState<GrowthMeasure[]>([])
   const [tab, setTab] = useState<Tab>('status')
   const [settingUp, setSettingUp] = useState(false)
 
   const load = useCallback(async () => {
     const s = await readLockState()
     setState(s)
-    if (s === 'locked') { setChild(null); setEvents([]); setReady(true); return }
+    if (s === 'locked') { setChild(null); setEvents([]); setMeasures([]); setReady(true); return }
     const v = await readVault()
     const first = v.children.find((c) => !c.deletedAt) ?? null
     setChild(first)
     setEvents(first ? v.vaccinations.filter((e) => e.childId === first.id) : [])
+    setMeasures(first ? v.growth.filter((m) => m.childId === first.id) : [])
     setReady(true)
   }, [])
 
@@ -90,6 +93,31 @@ export default function App() {
     await load()
   }
 
+  const addMeasure = async (input: MeasureInput) => {
+    const m: GrowthMeasure = {
+      id: newId(),
+      childId: child.id,
+      date: input.date,
+      weightKg: input.weightKg,
+      heightCm: input.heightCm,
+      headCircumferenceCm: input.headCircumferenceCm,
+      source: 'manual',
+      verifiedByUser: true,
+      createdAt: stamp(),
+      updatedAt: stamp(),
+    }
+    await mutate((v) => { v.growth.push(m) })
+    await load()
+  }
+
+  const removeMeasure = async (id: string) => {
+    await mutate((v) => {
+      const m = v.growth.find((x) => x.id === id)
+      if (m) { m.deletedAt = stamp(); m.updatedAt = stamp() }
+    })
+    await load()
+  }
+
   return (
     <ExplainProvider>
     <div className="flex min-h-dvh flex-col">
@@ -101,11 +129,15 @@ export default function App() {
         {tab === 'photos' && (
           <Record child={child} schedule={schedule} events={events} onChange={load} />
         )}
+        {tab === 'growth' && (
+          <Growth child={child} measures={measures} onAdd={addMeasure} onDelete={removeMeasure} />
+        )}
         {tab === 'settings' && (
           <Settings
             child={child} schedule={schedule} lockState={state}
             onSetupEncryption={() => setSettingUp(true)}
             onLock={() => { lock(); void load() }}
+            onMerged={load}
           />
         )}
       </div>

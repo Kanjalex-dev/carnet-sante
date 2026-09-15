@@ -2,12 +2,12 @@ import { useMemo, useState } from 'react'
 import type { Child, Schedule, VaccinationEvent } from '../domain/types'
 import {
   type AttachmentMeta, attachToVaccination, listAttachments, mutate, newId, softDeleteVaccination,
-  stamp, updateVaccination,
+  stamp, updateVaccination, detachFromVaccination,
 } from '../storage/repository'
 import { OcrReview } from './OcrReview'
 import { buildRecap, type RecapOptions } from '../storage/pdf'
 import { Button, LegalNotice } from './atoms'
-import { PhotoSection } from './Photos'
+import { AttachedThumbs, PhotoPicker, PhotoSection } from './Photos'
 import type { Explanation } from './Explain'
 import { frDate as humanDate } from './format'
 import { Explainable } from './Explain'
@@ -59,6 +59,9 @@ export function Record({ child, schedule, events, onChange }: {
             <ul className="m-0 flex list-none flex-col gap-2 p-0">
               {live.map((e) => (
                 <EventRow key={e.id} event={e} explanations={explanations} labels={labels}
+                  childId={child.id}
+                  onAttach={async (attachmentId) => { await attachToVaccination(e.id, attachmentId); await onChange() }}
+                  onDetach={async (attachmentId) => { await detachFromVaccination(e.id, attachmentId); await onChange() }}
                   onVerify={async () => { await updateVaccination(e.id, { verifiedByUser: true }); await onChange() }}
                   onDelete={async () => { await softDeleteVaccination(e.id); await onChange() }} />
               ))}
@@ -136,14 +139,18 @@ export function Record({ child, schedule, events, onChange }: {
   )
 }
 
-function EventRow({ event, onDelete, onVerify, explanations, labels }: {
+function EventRow({ event, onDelete, onVerify, onAttach, onDetach, childId, explanations, labels }: {
   event: VaccinationEvent
   onDelete: () => void
   onVerify: () => void
+  onAttach: (attachmentId: string) => void
+  onDetach: (attachmentId: string) => void
+  childId: string
   explanations: Map<string, Explanation>
   labels: Map<string, string>
 }) {
   const [confirming, setConfirming] = useState(false)
+  const [picking, setPicking] = useState(false)
   return (
     <li className="border-line bg-surface rounded-[12px] border p-3.5"
       style={{ borderLeft: `3px solid ${event.verifiedByUser ? '#1E7351' : '#A87F1F'}` }}>
@@ -177,6 +184,12 @@ function EventRow({ event, onDelete, onVerify, explanations, labels }: {
           {event.verifiedByUser ? 'Vérifié' : 'Non vérifié'}
         </Explainable>
       </div>
+      {event.attachmentIds.length > 0 && (
+        <div className="mt-2.5">
+          <AttachedThumbs ids={event.attachmentIds} onRemove={onDetach} />
+        </div>
+      )}
+
       <div className="bg-line-soft my-2.5 h-px" />
       {confirming ? (
         <div className="flex items-center justify-between gap-3">
@@ -194,6 +207,14 @@ function EventRow({ event, onDelete, onVerify, explanations, labels }: {
             className="text-ink-muted min-h-11 text-[12.5px] font-medium underline">
             Corriger ou retirer
           </button>
+          <button onClick={() => setPicking(true)}
+            className="border-line-strong bg-surface text-ink-strong inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-[8px] border px-3 text-[12.5px] font-semibold">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#33414F" strokeWidth="1.9"
+              strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="16" rx="2" /><path d="m4 16 4.5-4.5 3 3L16 10l4 4" />
+            </svg>
+            {event.attachmentIds.length > 0 ? 'Joindre une autre page' : 'Joindre une page'}
+          </button>
           {!event.verifiedByUser && (
             <button onClick={onVerify}
               className="border-ok-border bg-ok-bg text-ok inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-[8px] border px-3 text-[12.5px] font-semibold">
@@ -205,6 +226,15 @@ function EventRow({ event, onDelete, onVerify, explanations, labels }: {
             </button>
           )}
         </div>
+      )}
+
+      {picking && (
+        <PhotoPicker
+          childId={childId}
+          attachedIds={event.attachmentIds}
+          onCancel={() => setPicking(false)}
+          onPick={(id) => { setPicking(false); onAttach(id) }}
+        />
       )}
     </li>
   )

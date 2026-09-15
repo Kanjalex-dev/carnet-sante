@@ -84,3 +84,31 @@ function fr(iso: string): string {
   const [y, m, d] = iso.split('-').map(Number)
   return FR.format(new Date(y, (m ?? 1) - 1, d ?? 1))
 }
+
+export function percentileExplanation(percentile: number, indicatorLabel: string): Explanation {
+  const p = Math.round(percentile)
+  return {
+    eyebrow: `${p}ᵉ centile`,
+    title: 'Que veut dire ce centile ?',
+    body: `Sur 100 enfants du même âge et du même sexe dans la population de référence de l’OMS, environ ${p} auraient un ${indicatorLabel.toLowerCase()} inférieur à celui-ci. C’est une situation par rapport à une moyenne, pas une note.`,
+    details: [
+      'Un enfant peut être durablement au 10ᵉ ou au 90ᵉ centile et se porter parfaitement bien : ce qui compte pour le médecin est la régularité de la courbe, pas le chiffre isolé.',
+      'Les couloirs tracés sur le graphique sont des écarts-types (−2 ET, médiane, +2 ET), comme sur les courbes du carnet papier.',
+      'La référence OMS s’arrête à 5 ans : au-delà, les mesures sont conservées mais ne sont plus placées sur la courbe.',
+    ],
+    medicalNote: true,
+  }
+}
+
+export function growthExplanation(): Explanation {
+  return {
+    title: 'À quoi sert cette courbe ?',
+    body: 'Elle situe le poids, la taille et le périmètre crânien de votre enfant par rapport à une population de référence de l’OMS. L’application place les points, elle ne les interprète pas.',
+    details: [
+      'Les mesures sont celles que vous saisissez, généralement relevées lors des visites médicales.',
+      'Les couloirs de référence valent pour un enfant né à terme. En cas de prématurité, l’âge corrigé se discute avec le médecin.',
+      'Rien ne sort de votre téléphone : le calcul se fait sur l’appareil.',
+    ],
+    medicalNote: true,
+  }
+}

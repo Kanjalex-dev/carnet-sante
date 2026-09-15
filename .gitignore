@@ -9,3 +9,5 @@ coverage
 *.carnet.json
 exports/
 photos/
+_to_delete/
+coverage/

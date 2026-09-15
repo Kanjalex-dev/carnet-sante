@@ -1,4 +1,4 @@
-export type Tab = 'status' | 'photos' | 'settings'
+export type Tab = 'status' | 'photos' | 'growth' | 'settings'
 
 const ICONS: Record<Tab, { path: React.ReactNode; label: string }> = {
   status: {
@@ -8,6 +8,10 @@ const ICONS: Record<Tab, { path: React.ReactNode; label: string }> = {
   photos: {
     label: 'Carnet',
     path: <><rect x="3" y="4" width="18" height="16" rx="2" /><path d="m4 16 4.5-4.5 3 3L16 10l4 4" /><circle cx="9" cy="9" r="1.4" /></>,
+  },
+  growth: {
+    label: 'Croissance',
+    path: <><path d="M4 19h16" /><path d="M4 19V5" /><path d="m6.5 15.5 4-4.5 3 2.5 4.5-6" /></>,
   },
   settings: {
     label: 'Réglages',

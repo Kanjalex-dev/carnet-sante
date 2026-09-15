@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { addMonths, today as todayFn } from '../domain/dates'
-import { computeStatus, groupByVisit, proposeCatchUp, summarise, upcomingDoses } from '../domain/status'
+import { computeStatus, groupByVisit, summarise, upcomingDoses } from '../domain/status'
+import { catchUpPlans, type CatchUpPlan } from '../domain/catchup'
 import type { DoseGroup } from '../domain/status'
 import type { Explanation } from './Explain'
 import type { Child, Schedule, VaccinationEvent } from '../domain/types'
@@ -27,7 +28,7 @@ export function Status({ child, schedule, events, onRecord }: {
       statuses,
       summary: summarise(statuses, child.birthDate, today),
       soon: groupByVisit(upcomingDoses(statuses, today)),
-      catchUp: proposeCatchUp(schedule, statuses, today),
+      catchUp: catchUpPlans(schedule, child.birthDate, today, events),
     }
   }, [schedule, child.birthDate, events, today])
 
@@ -77,19 +78,11 @@ export function Status({ child, schedule, events, onRecord }: {
         <VisitSection title="Dans les 3 mois" groups={upcoming} onPick={setEntry} explanations={explanations} />
 
         {catchUp.length > 0 && (
-          <section className="border-late-border bg-late-bg rounded-[12px] border p-3.5">
-            <h2 className="text-late m-0 text-[11px] font-bold tracking-[0.09em] uppercase">Rattrapage proposé</h2>
-            <ul className="mt-2 mb-0 flex list-none flex-col gap-1 p-0">
-              {catchUp.map((s) => (
-                <li key={`${s.valenceCode}-${s.doseNumber}`} className="text-ink-strong text-[13.5px]">
-                  {s.shortLabel} — dose {s.doseNumber}, à partir du{' '}
-                  <span className="tnum">{humanDate(s.proposedDate)}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="text-ink-strong mt-2.5 mb-0 text-[12px] leading-snug text-pretty">
-              Proposition calculée à partir du calendrier. <strong>À faire confirmer par un médecin</strong> avant toute injection.
-            </p>
+          <section className="flex flex-col gap-2.5">
+            <h2 className="text-ink-muted m-0 text-[11px] font-bold tracking-[0.09em] uppercase">
+              Rattrapage
+            </h2>
+            {catchUp.map((plan) => <CatchUpCard key={plan.valenceCode} plan={plan} />)}
           </section>
         )}
 
@@ -147,6 +140,56 @@ function Progress({ satisfied, total, unverified, birthDate }: {
         {unverified > 0 && ` ${unverified} vaccination${unverified > 1 ? 's' : ''} importée${unverified > 1 ? 's' : ''} reste${unverified > 1 ? 'nt' : ''} à vérifier.`}
       </p>
     </section>
+  )
+}
+
+/**
+ * Le rattrapage n'est pas un simple décalage des doses manquées : pour le
+ * méningocoque B, le schéma lui-même change selon l'âge auquel il commence.
+ * La carte affiche donc la tranche appliquée, pas seulement des dates.
+ */
+function CatchUpCard({ plan }: { plan: CatchUpPlan }) {
+  return (
+    <article className="border-due-border bg-due-bg rounded-[12px] border p-3.5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-col gap-1">
+          <h3 className="m-0 text-[15px] font-semibold tracking-tight">{plan.valenceLabel}</h3>
+          <p className="text-ink-strong m-0 text-[12.5px]">{plan.ruleLabel}</p>
+        </div>
+        {plan.recommendedOnly && (
+          <span className="text-ink-muted border-line bg-surface shrink-0 rounded-full border px-2 py-0.5 text-[10.5px] font-bold">
+            Recommandé
+          </span>
+        )}
+      </div>
+
+      {plan.alreadyGiven > 0 && (
+        <p className="text-ink-muted m-0 mt-1.5 text-[12px]">
+          {plan.alreadyGiven} dose{plan.alreadyGiven > 1 ? 's' : ''} déjà enregistrée{plan.alreadyGiven > 1 ? 's' : ''}.
+        </p>
+      )}
+
+      <ol className="mt-2.5 mb-0 flex list-none flex-col gap-1.5 p-0">
+        {plan.steps.map((step) => (
+          <li key={step.n} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="text-ink text-[13px] font-semibold">{step.label}</span>
+            <span className="text-ink-strong tnum text-[12.5px]">
+              à partir du {humanDate(step.earliest)}
+              {step.latest && ` et avant le ${humanDate(step.latest)}`}
+            </span>
+          </li>
+        ))}
+      </ol>
+
+      {plan.note && (
+        <p className="text-ink-strong m-0 mt-2 text-[12px] leading-snug text-pretty">{plan.note}</p>
+      )}
+
+      <p className="text-ink-strong m-0 mt-2 text-[12px] leading-snug text-pretty">
+        Schéma issu du calendrier officiel. <strong>À faire confirmer par un médecin</strong> avant
+        toute injection : lui seul décide du vaccin et de l'espacement.
+      </p>
+    </article>
   )
 }
 
