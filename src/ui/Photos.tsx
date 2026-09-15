@@ -3,6 +3,8 @@ import {
   type AttachmentMeta, deleteAttachment, listAttachments, newId, putAttachment, readAttachment,
 } from '../storage/repository'
 import { ImageTooLargeError, NotAnImageError, formatBytes, processImage, toObjectURL } from '../storage/image'
+import { isNative } from '../native/platform'
+import { takeNativePhoto } from '../native/camera'
 import { Button } from './atoms'
 import { frStamp } from './format'
 
@@ -20,6 +22,39 @@ export function PhotoSection({ childId, refreshKey = 0, onRead }: {
 
   const refresh = async () => setItems(await listAttachments(childId))
   useEffect(() => { void refresh() }, [childId, refreshKey])
+
+  const addOne = async (file: File) => {
+    setBusy(true); setError(null)
+    try {
+      const img = await processImage(file)
+      await putAttachment({
+        id: newId(), childId, mimeType: img.mimeType,
+        width: img.width, height: img.height, bytes: img.bytes.length,
+        capturedAt: new Date().toISOString(),
+      }, img.bytes)
+      await refresh()
+    } catch (e) {
+      console.error('Traitement de la photo', e)
+      setError(
+        e instanceof NotAnImageError ? "Ce fichier n'est pas une image."
+        : e instanceof ImageTooLargeError ? 'Fichier trop volumineux (25 Mo maximum).'
+        : "Cette photo n'a pas pu être lue. Réessayez, ou choisissez un autre fichier.",
+      )
+    } finally { setBusy(false) }
+  }
+
+  // Sur iOS, la caméra native remplace le sélecteur de fichier : cadrage et
+  // flash du système, plutôt que la boîte de dialogue générique du navigateur.
+  const addNative = async () => {
+    setBusy(true); setError(null)
+    try {
+      const file = await takeNativePhoto()
+      if (file) await addOne(file)
+    } catch (e) {
+      console.error('Capture native', e)
+      setError("La photo n'a pas pu être prise. Réessayez.")
+    } finally { setBusy(false) }
+  }
 
   const add = async (files: FileList | null) => {
     if (!files || files.length === 0) return
@@ -59,7 +94,7 @@ export function PhotoSection({ childId, refreshKey = 0, onRead }: {
         )}
       </div>
 
-      <AddPhoto onFiles={add} busy={busy} />
+      <AddPhoto onFiles={add} onNative={addNative} busy={busy} />
 
       {error && (
         <p className="border-late-border bg-late-bg text-late m-0 rounded-[12px] border px-3.5 py-2.5 text-[13px] font-medium">
@@ -100,9 +135,14 @@ export function PhotoSection({ childId, refreshKey = 0, onRead }: {
   )
 }
 
-function AddPhoto({ onFiles, busy }: { onFiles: (f: FileList | null) => void; busy: boolean }) {
+function AddPhoto({ onFiles, onNative, busy }: {
+  onFiles: (f: FileList | null) => void
+  onNative: () => void
+  busy: boolean
+}) {
   const camera = useRef<HTMLInputElement>(null)
   const library = useRef<HTMLInputElement>(null)
+  const native = isNative()
   return (
     <div className="flex gap-2.5">
       <input ref={camera} type="file" accept="image/*" capture="environment" className="hidden"
@@ -110,7 +150,7 @@ function AddPhoto({ onFiles, busy }: { onFiles: (f: FileList | null) => void; bu
       <input ref={library} type="file" accept="image/*" multiple className="hidden"
         onChange={(e) => { onFiles(e.target.files); e.target.value = '' }} />
       <div className="flex-1">
-        <Button full onClick={() => camera.current?.click()} disabled={busy}>
+        <Button full onClick={native ? onNative : () => camera.current?.click()} disabled={busy}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M14.5 4h-5L7 7H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1h-3l-2.5-3Z" /><circle cx="12" cy="13" r="3.5" />
           </svg>

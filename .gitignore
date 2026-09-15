@@ -11,3 +11,5 @@ exports/
 photos/
 _to_delete/
 coverage/
+ios/App/Pods
+ios/.build

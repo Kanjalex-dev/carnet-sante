@@ -12,6 +12,10 @@ import type { Explanation } from './Explain'
 import { frDate as humanDate } from './format'
 import { Explainable } from './Explain'
 import { buildLabelIndex, buildValenceIndex, verifiedExplanation } from './explanations'
+import { isNative } from '../native/platform'
+import { shareFile } from '../native/share'
+import { isPro } from '../pro/purchases'
+import { Paywall } from '../pro/Paywall'
 
 
 export function Record({ child, schedule, events, onChange }: {
@@ -21,6 +25,8 @@ export function Record({ child, schedule, events, onChange }: {
   onChange: () => Promise<void>
 }) {
   const [exporting, setExporting] = useState(false)
+  const [sharing, setSharing] = useState(false)
+  const [showPaywall, setShowPaywall] = useState(false)
   const [photoKey, setPhotoKey] = useState(0)
   const [reading, setReading] = useState<AttachmentMeta | null>(null)
   const explanations = useMemo(() => buildValenceIndex(schedule), [schedule])
@@ -95,6 +101,24 @@ export function Record({ child, schedule, events, onChange }: {
           }}>
             {exporting ? 'Génération…' : 'Générer le PDF'}
           </Button>
+          {isNative() && (
+            <Button full variant="secondary" disabled={sharing} onClick={async () => {
+              if (!(await isPro())) { setShowPaywall(true); return }
+              setSharing(true)
+              try {
+                const attachments = await listAttachments(child.id)
+                const bytes = await buildRecap(child, schedule, events, attachments, {
+                  includePhotos: true, includeSignature: true, includeLots: true,
+                })
+                await shareFile(
+                  bytes, `recapitulatif-vaccinal-${child.firstName.toLowerCase()}.pdf`,
+                  'Récapitulatif vaccinal',
+                )
+              } finally { setSharing(false) }
+            }}>
+              {sharing ? 'Préparation…' : 'Partager (e-mail, SMS, médecin…)'}
+            </Button>
+          )}
           <p className="text-ink-muted m-0 text-[11.5px] leading-snug text-pretty">
             Ce document ne fait foi qu'une fois signé. Il contient des données de santé : ne le
             transmettez qu'à un destinataire de confiance.
@@ -134,6 +158,9 @@ export function Record({ child, schedule, events, onChange }: {
             await onChange()
           }}
         />
+      )}
+      {showPaywall && (
+        <Paywall onClose={() => setShowPaywall(false)} onUnlocked={() => setShowPaywall(false)} />
       )}
     </div>
   )

@@ -16,6 +16,9 @@ import { ExplainProvider } from './ui/Explain'
 import { SetupEncryption, Unlock } from './ui/Vault'
 import type { DoseEntryValue } from './ui/DoseEntry'
 import type { GrowthMeasure, VaccinationEvent } from './domain/types'
+import { computeStatus, upcomingDoses } from './domain/status'
+import { today } from './domain/dates'
+import { syncReminders } from './native/reminders'
 
 const schedule = scheduleData as Schedule
 
@@ -41,6 +44,15 @@ export default function App() {
   }, [])
 
   useEffect(() => { void load() }, [load])
+
+  // Reprogrammé à chaque changement de données : nouvelle dose enregistrée,
+  // rendez-vous marqué fait, enfant fusionné depuis l'autre parent. Sans
+  // effet hors de l'app iOS — voir native/reminders.ts.
+  useEffect(() => {
+    if (!child) return
+    const statuses = computeStatus(schedule, child.birthDate, events, today())
+    void syncReminders(upcomingDoses(statuses, today(), 366), today())
+  }, [child, events])
 
   if (!ready) return null
 

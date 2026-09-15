@@ -30,6 +30,9 @@ interface SettingsRow {
   encrypted: boolean
   kdf: KdfParams | null
   canary: Sealed | null
+  /** Achat unique, à vie : jamais réinitialisé par un verrouillage ou une purge d'attachements. */
+  pro?: boolean
+  proPurchasedAt?: string
 }
 interface BlobRow { id: string; sealed: Sealed | null; plain: Uint8Array | null }
 
@@ -192,6 +195,30 @@ export async function deleteAttachment(id: string): Promise<void> {
  * sans elle les données sont irrécupérables, et une application qu'on ne peut
  * plus ni ouvrir ni réinitialiser est une impasse.
  */
+/* -------------------------------------------------------------------- pro */
+
+/**
+ * Débloqué une fois, débloqué à vie : aucune vérification récurrente auprès
+ * d'un serveur — il n'y en a pas. La preuve d'achat vit chez Apple ; ce
+ * drapeau local ne fait que refléter la dernière transaction connue.
+ */
+export async function isPro(): Promise<boolean> {
+  const s = await db.settings.get('settings')
+  return s?.pro === true
+}
+
+export async function setPro(purchased: boolean): Promise<void> {
+  const s = await db.settings.get('settings')
+  await db.settings.put({
+    id: 'settings',
+    encrypted: s?.encrypted ?? false,
+    kdf: s?.kdf ?? null,
+    canary: s?.canary ?? null,
+    pro: purchased,
+    proPurchasedAt: purchased ? new Date().toISOString() : undefined,
+  })
+}
+
 export async function updateVaccination(
   id: string,
   patch: Partial<VaccinationEvent>,
