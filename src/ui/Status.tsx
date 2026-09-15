@@ -163,6 +163,18 @@ function CatchUpCard({ plan }: { plan: CatchUpPlan }) {
         )}
       </div>
 
+      {/*
+       * L'app reproduit le calendrier officiel appliqué à l'âge de l'enfant,
+       * elle ne le prescrit pas : c'est ce qui distingue une information d'une
+       * recommandation individualisée (MDCG 2019-11). Le bandeau vient donc
+       * avant les dates, pas après, et « estimation » remplace tout langage
+       * prescriptif dans le libellé de chaque étape.
+       */}
+      <p className="border-line-strong text-ink-strong m-0 mt-2 mb-1 rounded-[8px] border border-dashed bg-white/50 px-2.5 py-2 text-[11.5px] leading-snug text-pretty">
+        Reproduction du calendrier officiel pour cette tranche d'âge — pas un avis médical.
+        <strong> Seul un professionnel de santé décide de la date et du vaccin.</strong>
+      </p>
+
       {plan.alreadyGiven > 0 && (
         <p className="text-ink-muted m-0 mt-1.5 text-[12px]">
           {plan.alreadyGiven} dose{plan.alreadyGiven > 1 ? 's' : ''} déjà enregistrée{plan.alreadyGiven > 1 ? 's' : ''}.
@@ -174,8 +186,8 @@ function CatchUpCard({ plan }: { plan: CatchUpPlan }) {
           <li key={step.n} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <span className="text-ink text-[13px] font-semibold">{step.label}</span>
             <span className="text-ink-strong tnum text-[12.5px]">
-              à partir du {humanDate(step.earliest)}
-              {step.latest && ` et avant le ${humanDate(step.latest)}`}
+              estimation : entre le {humanDate(step.earliest)}
+              {step.latest ? ` et le ${humanDate(step.latest)}` : ' et la visite suivante'}
             </span>
           </li>
         ))}
@@ -184,11 +196,6 @@ function CatchUpCard({ plan }: { plan: CatchUpPlan }) {
       {plan.note && (
         <p className="text-ink-strong m-0 mt-2 text-[12px] leading-snug text-pretty">{plan.note}</p>
       )}
-
-      <p className="text-ink-strong m-0 mt-2 text-[12px] leading-snug text-pretty">
-        Schéma issu du calendrier officiel. <strong>À faire confirmer par un médecin</strong> avant
-        toute injection : lui seul décide du vaccin et de l'espacement.
-      </p>
     </article>
   )
 }

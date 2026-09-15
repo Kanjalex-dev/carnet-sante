@@ -5,14 +5,16 @@ import { formatBytes } from '../storage/image'
 import { frDate } from './format'
 import { Button, LegalNotice } from './atoms'
 import { ShareSection } from './Share'
+import { ProGate } from '../pro/ProGate'
 
-export function Settings({ child, schedule, lockState, onSetupEncryption, onLock, onMerged }: {
+export function Settings({ child, schedule, lockState, onSetupEncryption, onLock, onMerged, childSwitcher }: {
   child: Child
   schedule: Schedule
   lockState: LockState
   onSetupEncryption: () => void
   onLock: () => void
   onMerged: () => Promise<void>
+  childSwitcher?: React.ReactNode
 }) {
   const [usage, setUsage] = useState({ count: 0, bytes: 0 })
   useEffect(() => { void attachmentUsage().then(setUsage) }, [])
@@ -29,6 +31,8 @@ export function Settings({ child, schedule, lockState, onSetupEncryption, onLock
           <Row label="Naissance" value={frDate(child.birthDate)} />
           <Row label="Calendrier appliqué" value={schedule.id} mono />
         </Section>
+
+        {childSwitcher}
 
         <Section title="Données de cet appareil">
           <Row
@@ -60,7 +64,10 @@ export function Settings({ child, schedule, lockState, onSetupEncryption, onLock
           </div>
         )}
 
-        <ShareSection schedule={schedule} onMerged={onMerged} />
+        <ProGate title="Partage co-parent"
+          description="Fusionnez le carnet avec celui tenu par l'autre parent, avec un aperçu ligne par ligne avant tout enregistrement.">
+          <ShareSection schedule={schedule} onMerged={onMerged} />
+        </ProGate>
 
         <Section title="Source des données">
           <p className="text-ink-muted m-0 px-3.5 py-3 text-[12.5px] leading-snug text-pretty">

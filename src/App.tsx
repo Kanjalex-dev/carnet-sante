@@ -19,12 +19,15 @@ import type { GrowthMeasure, VaccinationEvent } from './domain/types'
 import { computeStatus, upcomingDoses } from './domain/status'
 import { today } from './domain/dates'
 import { syncReminders } from './native/reminders'
+import { ProGate } from './pro/ProGate'
+import { ChildSwitcher } from './ui/ChildSwitcher'
 
 const schedule = scheduleData as Schedule
 
 export default function App() {
   const [ready, setReady] = useState(false)
   const [state, setState] = useState<LockState>('plain')
+  const [allChildren, setAllChildren] = useState<Child[]>([])
   const [child, setChild] = useState<Child | null>(null)
   const [events, setEvents] = useState<VaccinationEvent[]>([])
   const [measures, setMeasures] = useState<GrowthMeasure[]>([])
@@ -34,14 +37,29 @@ export default function App() {
   const load = useCallback(async () => {
     const s = await readLockState()
     setState(s)
-    if (s === 'locked') { setChild(null); setEvents([]); setMeasures([]); setReady(true); return }
+    if (s === 'locked') {
+      setAllChildren([]); setChild(null); setEvents([]); setMeasures([]); setReady(true)
+      return
+    }
     const v = await readVault()
-    const first = v.children.find((c) => !c.deletedAt) ?? null
-    setChild(first)
-    setEvents(first ? v.vaccinations.filter((e) => e.childId === first.id) : [])
-    setMeasures(first ? v.growth.filter((m) => m.childId === first.id) : [])
+    const active = v.children.filter((c) => !c.deletedAt)
+    setAllChildren(active)
+    // Le dernier enfant affiché est mémorisé localement — un confort par
+    // appareil, jamais une donnée qui compte : s'il disparaît (perte du
+    // navigateur privé, etc.), on retombe simplement sur le premier enfant.
+    let storedId: string | null = null
+    try { storedId = localStorage.getItem('carnet.activeChildId') } catch { /* indisponible : tant pis */ }
+    const current = active.find((c) => c.id === storedId) ?? active[0] ?? null
+    setChild(current)
+    setEvents(current ? v.vaccinations.filter((e) => e.childId === current.id) : [])
+    setMeasures(current ? v.growth.filter((m) => m.childId === current.id) : [])
     setReady(true)
   }, [])
+
+  const switchChild = (id: string) => {
+    try { localStorage.setItem('carnet.activeChildId', id) } catch { /* indisponible : tant pis */ }
+    void load()
+  }
 
   useEffect(() => { void load() }, [load])
 
@@ -72,6 +90,7 @@ export default function App() {
           ...input, id: newId(), scheduleId: schedule.id, createdAt: stamp(), updatedAt: stamp(),
         }
         await mutate((v) => { v.children.push(created) })
+        try { localStorage.setItem('carnet.activeChildId', created.id) } catch { /* indisponible : tant pis */ }
         await load()
       }} />
     )
@@ -130,6 +149,14 @@ export default function App() {
     await load()
   }
 
+  const addChild = async (input: { firstName: string; birthDate: string; sex: 'F' | 'M' }) => {
+    const created: Child = {
+      ...input, id: newId(), scheduleId: schedule.id, createdAt: stamp(), updatedAt: stamp(),
+    }
+    await mutate((v) => { v.children.push(created) })
+    switchChild(created.id)
+  }
+
   return (
     <ExplainProvider>
     <div className="flex min-h-dvh flex-col">
@@ -142,7 +169,10 @@ export default function App() {
           <Record child={child} schedule={schedule} events={events} onChange={load} />
         )}
         {tab === 'growth' && (
-          <Growth child={child} measures={measures} onAdd={addMeasure} onDelete={removeMeasure} />
+          <ProGate title="Courbes de croissance"
+            description="Suivez le poids, la taille et le périmètre crânien de votre enfant par rapport aux courbes de référence de l'OMS.">
+            <Growth child={child} measures={measures} onAdd={addMeasure} onDelete={removeMeasure} />
+          </ProGate>
         )}
         {tab === 'settings' && (
           <Settings
@@ -150,6 +180,9 @@ export default function App() {
             onSetupEncryption={() => setSettingUp(true)}
             onLock={() => { lock(); void load() }}
             onMerged={load}
+            childSwitcher={
+              <ChildSwitcher children={allChildren} activeId={child.id} onSwitch={switchChild} onCreate={addChild} />
+            }
           />
         )}
       </div>
