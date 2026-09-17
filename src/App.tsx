@@ -19,6 +19,7 @@ import type { GrowthMeasure, VaccinationEvent } from './domain/types'
 import { computeStatus, upcomingDoses } from './domain/status'
 import { today } from './domain/dates'
 import { syncReminders } from './native/reminders'
+import { maybeRequestReview } from './native/review'
 import { ProGate } from './pro/ProGate'
 import { ChildSwitcher } from './ui/ChildSwitcher'
 
@@ -120,8 +121,9 @@ export default function App() {
       createdAt: stamp(),
       updatedAt: stamp(),
     }
-    await mutate((v) => { v.vaccinations.push(event) })
+    const v = await mutate((vault) => { vault.vaccinations.push(event) })
     await load()
+    void maybeRequestReview(v.vaccinations.filter((e) => e.childId === child.id).length)
   }
 
   const addMeasure = async (input: MeasureInput) => {

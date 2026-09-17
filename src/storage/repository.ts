@@ -33,6 +33,8 @@ interface SettingsRow {
   /** Achat unique, à vie : jamais réinitialisé par un verrouillage ou une purge d'attachements. */
   pro?: boolean
   proPurchasedAt?: string
+  /** Empêche de solliciter l'avis App Store plus d'une fois — StoreKit limite déjà, on ajoute notre propre garde-fou. */
+  reviewPromptShown?: boolean
 }
 interface BlobRow { id: string; sealed: Sealed | null; plain: Uint8Array | null }
 
@@ -216,6 +218,27 @@ export async function setPro(purchased: boolean): Promise<void> {
     canary: s?.canary ?? null,
     pro: purchased,
     proPurchasedAt: purchased ? new Date().toISOString() : undefined,
+  })
+}
+
+/* ----------------------------------------------------------------- avis */
+
+/** Vrai si on a déjà demandé un avis App Store — on ne redemande jamais nous-mêmes. */
+export async function hasShownReviewPrompt(): Promise<boolean> {
+  const s = await db.settings.get('settings')
+  return s?.reviewPromptShown === true
+}
+
+export async function markReviewPromptShown(): Promise<void> {
+  const s = await db.settings.get('settings')
+  await db.settings.put({
+    id: 'settings',
+    encrypted: s?.encrypted ?? false,
+    kdf: s?.kdf ?? null,
+    canary: s?.canary ?? null,
+    pro: s?.pro,
+    proPurchasedAt: s?.proPurchasedAt,
+    reviewPromptShown: true,
   })
 }
 
