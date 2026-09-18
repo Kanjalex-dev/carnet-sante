@@ -6,6 +6,7 @@ import type { DoseGroup } from '../domain/status'
 import type { Explanation } from './Explain'
 import type { Child, Schedule, VaccinationEvent } from '../domain/types'
 import { IconCheck, LegalNotice, StatusPill } from './atoms'
+import { Emergency } from './Emergency'
 import { DoseEntry, type DoseEntryValue } from './DoseEntry'
 import { frDate as humanDate, humanAge } from './format'
 import { Explainable } from './Explain'
@@ -18,6 +19,7 @@ export function Status({ child, schedule, events, onRecord }: {
   events: VaccinationEvent[]
   onRecord: (group: DoseGroup, value: DoseEntryValue) => void
 }) {
+  const [emergency, setEmergency] = useState(false)
   const today = todayFn()
   const [entry, setEntry] = useState<DoseGroup | null>(null)
   const explanations = useMemo(() => buildValenceIndex(schedule), [schedule])
@@ -48,13 +50,25 @@ export function Status({ child, schedule, events, onRecord }: {
           style={{ background: 'linear-gradient(140deg,#275C94 0%,#C46B8B 100%)' }} aria-hidden="true">
           {child.firstName.slice(0, 1).toUpperCase()}
         </div>
-        <div className="flex min-w-0 flex-col">
+        <div className="flex min-w-0 flex-grow flex-col">
           <span className="truncate text-[16px] font-semibold tracking-tight">{child.firstName}</span>
           <span className="text-ink-muted truncate text-[12px]">
             {humanAge(summary.ageMonths)} · né{child.sex === 'F' ? 'e' : ''} le {humanDate(child.birthDate)}
           </span>
         </div>
+        {/* Un geste, depuis l'écran d'accueil : c'est la seule raison d'être
+            de cette fiche. La ranger dans les réglages la rendrait inutile. */}
+        <button onClick={() => setEmergency(true)} aria-label="Fiche d'urgence"
+          className="border-line-strong bg-surface text-late flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] border">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M12 3 4.5 6.3v5.1c0 4.4 3.1 8.5 7.5 9.6 4.4-1.1 7.5-5.2 7.5-9.6V6.3L12 3Z" />
+            <path d="M12 9v3.5" /><path d="M12 15.5v.01" />
+          </svg>
+        </button>
       </header>
+
+      {emergency && <Emergency child={child} onClose={() => setEmergency(false)} />}
 
       <main className="flex flex-1 flex-col gap-5 px-5 pb-6">
         <h1 className="font-display m-0 text-[30px] leading-[1.14] font-normal tracking-tight text-pretty">

@@ -234,7 +234,7 @@ function ChoiceRow({ label, summary, active, onClick }: {
 
 /* -------------------------------------------------------------- phrase */
 
-function PassphraseDialog({ title, intro, cta, onCancel, onSubmit }: {
+export function PassphraseDialog({ title, intro, cta, onCancel, onSubmit }: {
   title: string
   intro: string
   cta: string
@@ -282,7 +282,7 @@ function PassphraseDialog({ title, intro, cta, onCancel, onSubmit }: {
   )
 }
 
-function download(text: string, filename: string): void {
+export function download(text: string, filename: string): void {
   const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }))
   const a = document.createElement('a')
   a.href = url

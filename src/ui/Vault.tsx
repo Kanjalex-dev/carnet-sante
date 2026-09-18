@@ -1,7 +1,18 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  biometryAvailability, disableBiometricUnlock, isBiometricUnlockEnabled,
+  passphraseFromBiometrics,
+} from '../native/biometrics'
 import { Button } from './atoms'
 
-/** Écran de déverrouillage : la phrase secrète n'est jamais stockée. */
+/**
+ * Écran de déverrouillage.
+ *
+ * La phrase secrète n'est pas stockée par l'application. Elle peut l'être par
+ * le trousseau de l'appareil, sous protection biométrique, si la personne
+ * active ce raccourci dans les réglages — c'est iOS qui la garde, pas Carnet,
+ * et le champ de saisie reste toujours disponible.
+ */
 export function Unlock({ onUnlock, onWipe }: {
   onUnlock: (passphrase: string) => Promise<boolean>
   onWipe: () => Promise<void>
@@ -11,6 +22,8 @@ export function Unlock({ onUnlock, onWipe }: {
   const [busy, setBusy] = useState(false)
   const [lost, setLost] = useState(false)
   const [confirmWipe, setConfirmWipe] = useState('')
+  const [biometry, setBiometry] = useState<{ label: string } | null>(null)
+  const tried = useRef(false)
 
   const submit = async () => {
     setBusy(true); setFailed(false)
@@ -18,6 +31,38 @@ export function Unlock({ onUnlock, onWipe }: {
     if (!ok) { setFailed(true); setPassphrase('') }
     setBusy(false)
   }
+
+  /**
+   * Tentative biométrique au premier affichage, une seule fois : relancer
+   * la demande après un refus transformerait un choix de l'utilisateur en
+   * harcèlement, et le champ de saisie reste disponible dessous.
+   */
+  const tryBiometrics = useCallback(async () => {
+    setBusy(true)
+    const secret = await passphraseFromBiometrics()
+    if (secret) {
+      const ok = await onUnlock(secret)
+      if (!ok) {
+        // La phrase du trousseau n'ouvre plus le coffre : elle a changé
+        // depuis. On la retire plutôt que de la reproposer indéfiniment.
+        await disableBiometricUnlock()
+        setBiometry(null)
+      }
+    }
+    setBusy(false)
+  }, [onUnlock])
+
+  useEffect(() => {
+    if (tried.current) return
+    tried.current = true
+    void (async () => {
+      if (!(await isBiometricUnlockEnabled())) return
+      const info = await biometryAvailability()
+      if (!info.available) return
+      setBiometry({ label: info.label })
+      await tryBiometrics()
+    })()
+  }, [tryBiometrics])
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[440px] flex-col justify-center gap-6 px-5 py-10">
@@ -46,6 +91,12 @@ export function Unlock({ onUnlock, onWipe }: {
           {busy ? 'Déchiffrement…' : 'Déverrouiller'}
         </Button>
       </form>
+
+      {biometry && (
+        <Button variant="secondary" full disabled={busy} onClick={() => { void tryBiometrics() }}>
+          Déverrouiller avec {biometry.label}
+        </Button>
+      )}
 
       {!lost ? (
         <button onClick={() => setLost(true)} className="text-ink-muted min-h-11 text-[13px] font-medium underline">

@@ -1,5 +1,8 @@
 import Dexie, { type Table } from 'dexie'
-import type { Child, GrowthMeasure, VaccinationEvent } from '../domain/types'
+import type { Child, EmergencyCard, GrowthMeasure, VaccinationEvent } from '../domain/types'
+import {
+  type BackedAttachment, type BackupPayload, fromBase64, toBase64,
+} from './backup'
 import {
   type KdfParams, type Sealed, checkCanary, deriveKey, makeCanary, newKdfParams,
   open as openSealed, openJSON, seal, sealJSON,
@@ -11,6 +14,8 @@ export interface Vault {
   children: Child[]
   vaccinations: VaccinationEvent[]
   growth: GrowthMeasure[]
+  /** Optionnel : les coffres créés avant cette fonctionnalité n'en ont pas. */
+  emergency?: EmergencyCard[]
 }
 
 export interface AttachmentMeta {
@@ -284,6 +289,68 @@ export async function wipeAll(): Promise<void> {
     await db.settings.clear()
     await db.attachments.clear()
     await db.blobs.clear()
+  })
+}
+
+/* ----------------------------------------------------------- sauvegarde */
+
+/**
+ * Rassemble tout ce qu'il faut pour reconstruire ce carnet ailleurs : le
+ * coffre et les pièces jointes, octets compris. Les photos sont relues une à
+ * une plutôt qu'en bloc — une sauvegarde peut peser plusieurs dizaines de
+ * mégaoctets et il n'y a aucune raison de tout tenir en mémoire deux fois.
+ */
+export async function collectBackup(): Promise<BackupPayload> {
+  const vault = await readVault()
+  const metas = await db.attachments.toArray()
+  const attachments: BackedAttachment[] = []
+  for (const meta of metas) {
+    const bytes = await readAttachment(meta.id)
+    // Une métadonnée sans octets est une pièce jointe déjà perdue : on ne la
+    // recopie pas dans la sauvegarde, ce serait promettre une photo absente.
+    if (bytes) attachments.push({ meta, bytesBase64: toBase64(bytes) })
+  }
+  return { vault, attachments }
+}
+
+/**
+ * Remplace TOUT le contenu local par celui de la sauvegarde. Destructif par
+ * nature : l'appel n'a de sens qu'après une confirmation explicite de la
+ * personne, et l'interface le dit avant, pas après.
+ *
+ * Le chiffrement local n'est pas restauré : il appartient à l'appareil, pas
+ * au fichier. Un carnet restauré sur un téléphone neuf repart en clair, et la
+ * personne réactive la phrase de passe si elle la veut.
+ */
+export async function restoreBackup(payload: BackupPayload): Promise<void> {
+  await wipeAll()
+  await db.transaction('rw', db.vault, db.attachments, db.blobs, async () => {
+    await db.vault.put({ id: 'vault', sealed: null, plain: payload.vault })
+    for (const a of payload.attachments) {
+      await db.attachments.put(a.meta)
+      await db.blobs.put({ id: a.meta.id, sealed: null, plain: fromBase64(a.bytesBase64) })
+    }
+  })
+  cache = payload.vault
+}
+
+/* ------------------------------------------------------------- urgence */
+
+/** Rend la fiche de cet enfant, ou une fiche vide — jamais `undefined`. */
+export async function readEmergencyCard(childId: string): Promise<EmergencyCard> {
+  const v = await readVault()
+  const found = v.emergency?.find((c) => c.childId === childId)
+  return found ?? { childId, contacts: [], updatedAt: stamp() }
+}
+
+export async function saveEmergencyCard(card: EmergencyCard): Promise<void> {
+  await mutate((v) => {
+    const list = v.emergency ?? []
+    const next = { ...card, updatedAt: stamp() }
+    const i = list.findIndex((c) => c.childId === card.childId)
+    if (i >= 0) list[i] = next
+    else list.push(next)
+    v.emergency = list
   })
 }
 

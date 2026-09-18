@@ -13,6 +13,34 @@ export interface Child {
   deletedAt?: ISOStamp
 }
 
+/**
+ * Fiche d'urgence : ce qu'un adulte doit pouvoir lire en trente secondes chez
+ * la nounou, en colonie ou aux urgences.
+ *
+ * Tous les champs sont du texte libre saisi par le parent et restitués tels
+ * quels. L'application n'en déduit rien, ne les vérifie pas et ne les
+ * complète pas : le moment où elle commencerait à interpréter « pénicilline »
+ * est le moment où elle deviendrait autre chose qu'un carnet.
+ */
+export interface EmergencyCard {
+  childId: string
+  bloodGroup?: string
+  allergies?: string
+  treatments?: string
+  history?: string
+  doctorName?: string
+  doctorPhone?: string
+  contacts: EmergencyContact[]
+  updatedAt: ISOStamp
+}
+
+export interface EmergencyContact {
+  id: string
+  name: string
+  relation?: string
+  phone: string
+}
+
 export interface VaccinationEvent {
   id: string
   childId: string
