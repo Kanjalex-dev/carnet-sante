@@ -1,0 +1,100 @@
+# Deploiement sur VPS personnel.
+#
+#   docker compose up -d
+#
+# Trois services : Postgres, l'application, et Caddy qui termine le TLS.
+# Le worker de fond tourne dans son propre conteneur : une synchronisation qui
+# traine ne doit pas ralentir les pages.
+#
+# Postgres n'expose AUCUN port sur l'hote : il n'est joignable que depuis le
+# reseau interne de Compose. Meme chose pour l'application — seul Caddy est
+# expose, en 80 et 443.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      TZ: ${TZ:-Europe/Paris}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Sauvegardes deposees par le service `backup`.
+      - ./backups:/backups
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      TZ: ${TZ:-Europe/Paris}
+    depends_on:
+      db:
+        condition: service_healthy
+    # Les migrations sont appliquees au demarrage : un deploiement se resume a
+    # `docker compose up -d --build`.
+    command: >
+      sh -c "npx prisma migrate deploy && node server.js"
+    expose:
+      - '3000'
+
+  worker:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      TZ: ${TZ:-Europe/Paris}
+    depends_on:
+      app:
+        condition: service_started
+    command: ['npx', 'tsx', 'src/server/worker.ts']
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+  # Sauvegarde quotidienne. Une application de suivi financier sans sauvegarde
+  # est une application qu'on perdra.
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      TZ: ${TZ:-Europe/Paris}
+    volumes:
+      - ./backups:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: >
+      sh -c "while true; do
+        sleep 86400;
+        pg_dump -h db -U ${POSTGRES_USER} -d ${POSTGRES_DB} -Fc
+          -f /backups/patrimo-$$(date +%Y%m%d).dump
+          && find /backups -name 'patrimo-*.dump' -mtime +30 -delete;
+      done"
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

@@ -25,21 +25,19 @@ export function IconMinus({ size = 16, color = 'currentColor' }: { size?: number
  * couleur + icône + libellé texte, systématiquement.
  */
 const STATE_STYLE: Record<DoseState, { fg: string; bg: string; border: string; label: string }> = {
-  late: { fg: 'text-late', bg: 'bg-late-bg', border: 'border-late-border', label: 'En retard' },
-  due: { fg: 'text-due', bg: 'bg-due-bg', border: 'border-due-border', label: 'À faire' },
-  upcoming: { fg: 'text-ink-muted', bg: 'bg-paper-sunken', border: 'border-line', label: 'À venir' },
-  done: { fg: 'text-ok', bg: 'bg-ok-bg', border: 'border-ok-border', label: 'Fait' },
-  'not-applicable': { fg: 'text-ink-muted', bg: 'bg-paper-sunken', border: 'border-line', label: 'Sans objet' },
+  'not-recorded': {
+    fg: 'text-ink-muted', bg: 'bg-paper-sunken', border: 'border-line', label: 'Non inscrit',
+  },
+  done: { fg: 'text-ok', bg: 'bg-ok-bg', border: 'border-ok-border', label: 'Inscrit' },
 }
 
 const HEX: Record<DoseState, string> = {
-  late: '#B23D1F', due: '#8C5D14', upcoming: '#5E6E7E', done: '#1E7351', 'not-applicable': '#5E6E7E',
+  'not-recorded': '#5E6E7E', done: '#1E7351',
 }
 
 export function StatusPill({ state, children }: { state: DoseState; children?: ReactNode }) {
   const s = STATE_STYLE[state]
-  const Icon = state === 'late' ? IconAlert : state === 'due' || state === 'upcoming' ? IconClock
-    : state === 'done' ? IconCheck : IconMinus
+  const Icon = state === 'done' ? IconCheck : IconMinus
   return (
     <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border ${s.bg} ${s.border} px-2.5 py-1`}>
       <Icon size={13} color={HEX[state]} />
@@ -59,11 +57,18 @@ export function Button({ children, onClick, variant = 'primary', type = 'button'
   return <button type={type} onClick={onClick} disabled={disabled} className={`${base} ${style}`}>{children}</button>
 }
 
+/**
+ * Mention permanente. Elle dit ce que l'application est — un outil
+ * d'archivage — et ce qu'elle n'est pas. Elle n'est pas un paravent : le
+ * produit est construit pour que cette phrase soit exacte. Voir
+ * domain/status.ts et domain/catchup.ts.
+ */
 export function LegalNotice() {
   return (
     <p className="bg-paper-sunken border-line text-ink-muted m-0 border-t px-5 py-2.5 text-[10.5px] leading-snug">
-      Outil de suivi personnel. Ne remplace ni le carnet de santé officiel ni l'avis d'un
-      professionnel de santé.
+      Outil personnel d'archivage. Carnet ne calcule rien pour votre enfant et ne recommande
+      aucune date. Ne remplace ni le carnet de santé officiel ni l'avis d'un professionnel
+      de santé.
     </p>
   )
 }

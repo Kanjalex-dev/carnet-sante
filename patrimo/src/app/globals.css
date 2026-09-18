@@ -1,0 +1,127 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Palette. Clair par defaut, sombre selon les reglages du systeme : sur iPhone,
+ * une app financiere consultee le soir en mode clair force est agressive.
+ */
+:root {
+  --bg: 248 248 246;
+  --surface: 255 255 255;
+  --surface-2: 243 243 240;
+  --line: 226 226 221;
+  --ink: 26 26 24;
+  --muted: 113 113 108;
+  --accent: 32 90 160;
+  --positive: 30 122 84;
+  --negative: 178 52 52;
+  --warn: 176 112 20;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: 18 18 20;
+    --surface: 28 28 31;
+    --surface-2: 38 38 42;
+    --line: 55 55 60;
+    --ink: 238 238 236;
+    --muted: 150 150 155;
+    --accent: 122 172 240;
+    --positive: 92 194 143;
+    --negative: 240 122 122;
+    --warn: 232 176 74;
+  }
+}
+
+html {
+  /* Empeche iOS de zoomer le texte en paysage. */
+  -webkit-text-size-adjust: 100%;
+  background-color: rgb(var(--bg));
+}
+
+body {
+  background-color: rgb(var(--bg));
+  color: rgb(var(--ink));
+  /* Le rebond de defilement fait ressortir le fond du navigateur sous l'app
+     installee : on le desactive au niveau du body, pas des zones scrollables. */
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Les champs de saisie sous 16 px declenchent un zoom automatique sur iOS. */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl2 border border-line bg-surface p-4;
+  }
+
+  .card-tight {
+    @apply rounded-xl2 border border-line bg-surface p-3;
+  }
+
+  .label {
+    @apply text-xs font-medium uppercase tracking-wide text-muted;
+  }
+
+  .btn {
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl2 px-4
+           text-sm font-medium transition-colors active:scale-[0.98];
+  }
+
+  .btn-primary {
+    @apply btn bg-accent text-white;
+  }
+
+  .btn-ghost {
+    @apply btn border border-line bg-surface text-ink;
+  }
+
+  .btn-quiet {
+    @apply btn text-muted;
+  }
+
+  .input {
+    @apply min-h-[44px] w-full rounded-xl2 border border-line bg-surface px-3 text-ink
+           outline-none placeholder:text-muted focus:border-accent;
+  }
+
+  /* Chiffres alignes en colonne sans passer par une police monospace : sur les
+     gros montants, le monospace ecarte tellement les caracteres que le nombre
+     devient plus difficile a lire d'un coup d'oeil qu'a comparer. */
+  .amount {
+    @apply tabular-nums;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full border border-line bg-surface2
+           px-2.5 py-1 text-xs text-muted;
+  }
+}
+
+/* Barre de navigation basse : elle doit rester au-dessus de la zone du geste
+   d'accueil sur les iPhone sans bouton. */
+.tabbar {
+  padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+}
+
+.page {
+  padding-top: max(env(safe-area-inset-top), 0.75rem);
+}
+
+/* Retire les fleches des champs numeriques : sur mobile elles ne servent a rien
+   et volent de la place. */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+}

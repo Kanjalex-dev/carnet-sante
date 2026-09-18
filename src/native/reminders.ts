@@ -1,18 +1,18 @@
 import { LocalNotifications } from '@capacitor/local-notifications'
 import { planReminders } from './reminderPlan'
 import { isNative } from './platform'
-import type { DoseStatus } from '../domain/types'
+import type { ParentReminder } from '../domain/types'
 import type { ISODate } from '../domain/dates'
 
 /**
- * Branche le plan de rappels (pur, dans reminderPlan.ts) sur l'API native.
+ * Branche sur l'API native les rappels que le parent a crees lui-meme.
  * Sur le web, cette fonction ne fait rien : les rappels natifs n'existent
  * que dans l'app iOS. L'export .ics reste la solution sur le web.
  */
 
 let permissionAsked = false
 
-export async function syncReminders(doses: DoseStatus[], today: ISODate): Promise<void> {
+export async function syncReminders(reminders: ParentReminder[], today: ISODate): Promise<void> {
   if (!isNative()) return
 
   if (!permissionAsked) {
@@ -32,7 +32,7 @@ export async function syncReminders(doses: DoseStatus[], today: ISODate): Promis
     await LocalNotifications.cancel({ notifications: pending.notifications })
   }
 
-  const plan = planReminders(doses, today)
+  const plan = planReminders(reminders, today)
   if (plan.length === 0) return
 
   await LocalNotifications.schedule({

@@ -42,12 +42,12 @@ export function progressExplanation(satisfied: number, total: number, birthDate:
     eyebrow: `${satisfied} sur ${total}`,
     title: 'Que représente ce chiffre ?',
     body: complete
-      ? `Les ${total} vaccins obligatoires pour un enfant né le ${fr(birthDate)} sont à jour : aucune dose n’a dépassé le délai prévu par le calendrier.`
-      : `Sur les ${total} vaccins obligatoires pour un enfant né le ${fr(birthDate)}, ${satisfied} ${satisfied > 1 ? 'sont à jour' : 'est à jour'}. ${total - satisfied > 1 ? 'Les autres ont' : "L’autre a"} au moins une dose dont le délai prévu est dépassé.`,
+      ? `Les ${total} vaccins obligatoires pour un enfant né le ${fr(birthDate)} ont toutes leurs doses inscrites au carnet.`
+      : `Sur les ${total} vaccins obligatoires pour un enfant né le ${fr(birthDate)}, ${satisfied} ${satisfied > 1 ? 'ont' : 'a'} toutes leurs doses inscrites. Pour ${total - satisfied > 1 ? 'les autres' : "l’autre"}, au moins une dose n’est pas encore inscrite.`,
     details: [
       'Le compte porte sur les vaccinations, pas sur les piqûres : une seule injection peut en couvrir jusqu’à six.',
       'La liste des obligations dépend de la date de naissance de l’enfant : elle a changé en 2018, puis en 2025.',
-      'Une vaccination reste comptée comme à jour tant que la prochaine dose n’a pas dépassé son délai.',
+      'Ce chiffre décrit ce qui est écrit dans le carnet, pas si votre enfant est à jour : seul votre médecin peut le dire.',
     ],
     medicalNote: true,
   }
@@ -85,27 +85,13 @@ function fr(iso: string): string {
   return FR.format(new Date(y, (m ?? 1) - 1, d ?? 1))
 }
 
-export function percentileExplanation(percentile: number, indicatorLabel: string): Explanation {
-  const p = Math.round(percentile)
-  return {
-    eyebrow: `${p}ᵉ centile`,
-    title: 'Que veut dire ce centile ?',
-    body: `Sur 100 enfants du même âge et du même sexe dans la population de référence de l’OMS, environ ${p} auraient un ${indicatorLabel.toLowerCase()} inférieur à celui-ci. C’est une situation par rapport à une moyenne, pas une note.`,
-    details: [
-      'Un enfant peut être durablement au 10ᵉ ou au 90ᵉ centile et se porter parfaitement bien : ce qui compte pour le médecin est la régularité de la courbe, pas le chiffre isolé.',
-      'Les couloirs tracés sur le graphique sont des écarts-types (−2 ET, médiane, +2 ET), comme sur les courbes du carnet papier.',
-      'La référence OMS s’arrête à 5 ans : au-delà, les mesures sont conservées mais ne sont plus placées sur la courbe.',
-    ],
-    medicalNote: true,
-  }
-}
-
 export function growthExplanation(): Explanation {
   return {
     title: 'À quoi sert cette courbe ?',
-    body: 'Elle situe le poids, la taille et le périmètre crânien de votre enfant par rapport à une population de référence de l’OMS. L’application place les points, elle ne les interprète pas.',
+    body: 'Elle reporte le poids, la taille et le périmètre crânien que vous saisissez sur les courbes de référence de l’OMS, comme sur les pages du carnet papier. L’application place les points, elle ne les lit pas.',
     details: [
       'Les mesures sont celles que vous saisissez, généralement relevées lors des visites médicales.',
+      'La position d’un point ne s’interprète pas seule : ce qui compte pour le médecin est la régularité de la courbe dans le temps.',
       'Les couloirs de référence valent pour un enfant né à terme. En cas de prématurité, l’âge corrigé se discute avec le médecin.',
       'Rien ne sort de votre téléphone : le calcul se fait sur l’appareil.',
     ],

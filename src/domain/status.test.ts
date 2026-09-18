@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import schedule from '../data/schedules/fr-2025.json'
 import type { Schedule, VaccinationEvent } from './types'
-import {
-  computeStatus, groupByVisit, resolveValence, summarise, upcomingDoses,
-} from './status'
+import { computeStatus, groupByVisit, resolveValence, summarise } from './status'
 
 const fr = schedule as Schedule
 const TODAY = '2026-09-10'
@@ -16,147 +14,112 @@ function event(p: Partial<VaccinationEvent> & { valences: string[]; date: string
 }
 
 describe('cohortes — l’obligation dépend de la date de naissance', () => {
-  it('un enfant né en 2025 relève des 13 valences obligatoires', () => {
-    const s = computeStatus(fr, '2025-07-12', [], TODAY)
-    const mandatory = s.filter((v) => v.mandatory).map((v) => v.code)
+  it('un enfant né en 2025 relève des valences obligatoires récentes', () => {
+    const mandatory = computeStatus(fr, '2025-07-12', [])
+      .filter((v) => v.mandatory).map((v) => v.code)
     expect(mandatory).toContain('MenB')
     expect(mandatory).toContain('MenACWY')
     expect(mandatory).not.toContain('MenC')
-    expect(mandatory.length).toBe(8) // 8 valences = 13 injections/valences réglementaires
+    expect(mandatory.length).toBe(8)
   })
 
   it('un enfant né en 2020 relève du méningo C, pas de l’ACWY obligatoire', () => {
-    const s = computeStatus(fr, '2020-05-01', [], TODAY)
-    const mandatory = s.filter((v) => v.mandatory).map((v) => v.code)
+    const mandatory = computeStatus(fr, '2020-05-01', [])
+      .filter((v) => v.mandatory).map((v) => v.code)
     expect(mandatory).toContain('MenC')
     expect(mandatory).not.toContain('MenACWY')
-    expect(mandatory).not.toContain('MenB')
   })
 
   it('un enfant né en 2016 n’a que le DTP obligatoire', () => {
-    const s = computeStatus(fr, '2016-03-04', [], TODAY)
-    expect(s.filter((v) => v.mandatory).map((v) => v.code)).toEqual(['DTP'])
+    expect(computeStatus(fr, '2016-03-04', []).filter((v) => v.mandatory).map((v) => v.code))
+      .toEqual(['DTP'])
   })
 
-  it('ne résout jamais l’obligation à partir de la date du jour', () => {
-    const a = resolveValence(fr.valences.find((v) => v.code === 'MenB')!, '2024-12-31')
-    const b = resolveValence(fr.valences.find((v) => v.code === 'MenB')!, '2025-01-01')
-    expect(a.mandatory).toBe(false)
-    expect(b.mandatory).toBe(true)
+  it('resolveValence écarte une valence remplacée pour les cohortes postérieures', () => {
+    const menC = fr.valences.find((v) => v.code === 'MenC')!
+    expect(resolveValence(menC, '2025-07-12').applicable).toBe(false)
   })
 })
 
-describe('états de dose', () => {
-  const birth = '2025-07-12' // 14 mois au 10/09/2026
+describe('une dose est inscrite, ou elle ne l’est pas', () => {
+  const birth = '2025-01-10'
 
-  it('marque « due » une dose dont la cible est passée mais la fenêtre ouverte', () => {
-    const s = computeStatus(fr, birth, [], TODAY)
-    const ror = s.find((v) => v.code === 'ROR')!
-    // cible 12 mois = 12/07/2026, fenêtre jusqu'à 15 mois = 12/10/2026
-    expect(ror.doses[0].state).toBe('due')
-    expect(ror.doses[0].daysSinceTarget).toBe(60)
-    expect(ror.doses[0].daysLate).toBeUndefined()
+  it('sans inscription, la dose est « non inscrite » — jamais « en retard »', () => {
+    const dtp = computeStatus(fr, birth, []).find((v) => v.code === 'DTP')!
+    expect(dtp.doses.every((d) => d.state === 'not-recorded')).toBe(true)
   })
 
-  it('marque en retard une dose obligatoire dont la fenêtre est dépassée', () => {
-    const s = computeStatus(fr, '2023-01-10', [], TODAY)
-    const ror = s.find((v) => v.code === 'ROR')!
-    expect(ror.doses[0].state).toBe('late')
-    expect(ror.doses[0].daysLate).toBeGreaterThan(0)
-    expect(ror.hasLate).toBe(true)
-  })
-
-  it('marque « sans objet » une dose recommandée dont la fenêtre est close', () => {
-    const s = computeStatus(fr, birth, [], TODAY)
-    const rota = s.find((v) => v.code === 'Rotavirus')!
-    expect(rota.doses.every((d) => d.state === 'not-applicable')).toBe(true)
-  })
-
-  it('marque « à venir » une dose dont la cible n’est pas atteinte', () => {
-    const s = computeStatus(fr, '2026-06-01', [], TODAY)
-    const ror = s.find((v) => v.code === 'ROR')!
-    expect(ror.doses[0].state).toBe('upcoming')
-  })
-
-  it('affecte les doses administrées dans l’ordre chronologique', () => {
-    const s = computeStatus(fr, birth, [
-      event({ valences: ['DTP', 'Coq', 'Hib', 'HepB'], date: '2025-09-12' }),
-      event({ valences: ['DTP', 'Coq', 'Hib', 'HepB'], date: '2025-11-14' }),
-    ], TODAY)
-    const dtp = s.find((v) => v.code === 'DTP')!
+  it('une injection enregistrée inscrit la dose correspondante', () => {
+    const events = [event({ valences: ['DTP'], date: '2025-03-12' })]
+    const dtp = computeStatus(fr, birth, events).find((v) => v.code === 'DTP')!
     expect(dtp.doses[0].state).toBe('done')
-    expect(dtp.doses[0].administeredOn).toBe('2025-09-12')
-    expect(dtp.doses[1].administeredOn).toBe('2025-11-14')
-    expect(dtp.doses[2].state).toBe('due')
+    expect(dtp.doses[0].administeredOn).toBe('2025-03-12')
+    expect(dtp.doses[1].state).toBe('not-recorded')
   })
 
-  it('ignore les événements supprimés', () => {
-    const s = computeStatus(fr, birth, [
-      event({ valences: ['ROR'], date: '2026-07-20', deletedAt: '2026-08-01' }),
-    ], TODAY)
-    expect(s.find((v) => v.code === 'ROR')!.doses[0].state).toBe('due')
-    expect(s.find((v) => v.code === 'ROR')!.doses[0].administeredOn).toBeUndefined()
+  it('une inscription supprimée ne compte plus', () => {
+    const events = [event({ valences: ['DTP'], date: '2025-03-12', deletedAt: '2025-04-01' })]
+    const dtp = computeStatus(fr, birth, events).find((v) => v.code === 'DTP')!
+    expect(dtp.doses[0].state).toBe('not-recorded')
   })
 
-  it('repousse la date au plus tôt selon l’intervalle minimal', () => {
-    const s = computeStatus(fr, '2026-04-01', [
-      event({ valences: ['MenB'], date: '2026-08-20' }),
-    ], TODAY)
-    const menb = s.find((v) => v.code === 'MenB')!
-    expect(menb.doses[1].earliestDate).toBe('2026-10-15') // 20/08 + 56 jours
-  })
-
-  it('signale une dose faite mais non vérifiée', () => {
-    const s = computeStatus(fr, birth, [
-      event({ valences: ['ROR'], date: '2026-07-20', verifiedByUser: false, source: 'ocr-local' }),
-    ], TODAY)
-    const ror = s.find((v) => v.code === 'ROR')!
-    expect(ror.doses[0].state).toBe('done')
-    expect(ror.doses[0].verified).toBe(false)
-    expect(ror.hasUnverified).toBe(true)
+  /**
+   * Garde-fou réglementaire. Si quelqu'un réintroduit une date calculée ou un
+   * décompte de retard dans DoseStatus, ce test tombe — et c'est le but :
+   * ces champs sont ce qui ferait basculer l'application du côté du dispositif
+   * médical (MDCG 2019-11, règle 11).
+   */
+  it('ne produit aucune date calculée ni aucun décompte de retard', () => {
+    const doses = computeStatus(fr, birth, []).flatMap((v) => v.doses)
+    for (const d of doses) {
+      const keys = Object.keys(d)
+      expect(keys).not.toContain('daysLate')
+      expect(keys).not.toContain('daysSinceTarget')
+      expect(keys).not.toContain('targetDate')
+      expect(keys).not.toContain('earliestDate')
+      expect(keys).not.toContain('latestDate')
+      expect(d.targetAgeMonths).toBeTypeOf('number')
+    }
   })
 })
 
-describe('horizon et synthèse', () => {
-  it('ne retient que les doses dues, en retard ou à venir sous 3 mois', () => {
-    const list = upcomingDoses(computeStatus(fr, '2025-07-12', [], TODAY), TODAY)
-    expect(list.length).toBeGreaterThan(0)
-    expect(list.every((d) => d.state !== 'not-applicable')).toBe(true)
-    expect(list.every((d) => d.state !== 'done')).toBe(true)
-    // trié par date cible croissante
-    const dates = list.map((d) => d.targetDate)
-    expect([...dates].sort()).toEqual(dates)
+describe('regroupement par rendez-vous du calendrier', () => {
+  const birth = '2025-01-10'
+
+  it('regroupe par âge officiel, pas par date', () => {
+    const groups = groupByVisit(computeStatus(fr, birth, []).flatMap((v) => v.doses))
+    expect(groups.length).toBeGreaterThan(0)
+    expect(groups.map((g) => g.targetAgeMonths))
+      .toEqual([...groups.map((g) => g.targetAgeMonths)].sort((a, b) => a - b))
+    for (const g of groups) expect(Object.keys(g)).not.toContain('targetDate')
   })
 
-  it('compte les obligations satisfaites', () => {
-    const s = computeStatus(fr, '2025-07-12', [], TODAY)
-    const sum = summarise(s, '2025-07-12', TODAY)
-    expect(sum.ageMonths).toBe(13)
-    expect(sum.mandatoryTotal).toBe(8)
-    expect(sum.dueSoonCount).toBeGreaterThan(0)
+  it('un rendez-vous est complet quand toutes ses doses sont inscrites', () => {
+    const groups = groupByVisit(computeStatus(fr, birth, []).flatMap((v) => v.doses))
+    expect(groups.every((g) => !g.complete)).toBe(true)
+  })
+
+  it('une injection couvre plusieurs valences : le rendez-vous en porte plusieurs', () => {
+    const groups = groupByVisit(computeStatus(fr, birth, []).flatMap((v) => v.doses))
+    expect(groups.some((g) => g.doses.length > 1)).toBe(true)
   })
 })
 
-describe('regroupement par rendez-vous', () => {
-  it('réunit sur une seule carte les valences d’une même injection', () => {
-    const s = computeStatus(fr, '2025-07-12', [], TODAY)
-    const groups = groupByVisit(upcomingDoses(s, TODAY, 3650))
-    const twoMonths = groups.find((g) => g.label === '2 mois')!
-    expect(twoMonths.doses.map((d) => d.valenceCode).sort())
-      .toEqual(['Coq', 'DTP', 'HepB', 'Hib', 'Pneumo'])
-    expect(twoMonths.state).toBe('late')
+describe('résumé', () => {
+  it('compte ce qui est inscrit, pas ce qui serait en retard', () => {
+    const birth = '2025-01-10'
+    const events = [event({ valences: ['DTP'], date: '2025-03-12' })]
+    const s = summarise(computeStatus(fr, birth, events), birth, TODAY)
+    expect(s.recordedCount).toBe(1)
+    expect(s.notRecordedCount).toBeGreaterThan(0)
+    expect(Object.keys(s)).not.toContain('lateCount')
+    expect(Object.keys(s)).not.toContain('dueSoonCount')
   })
 
-  it('retient l’état le plus sévère du rendez-vous', () => {
-    const s = computeStatus(fr, '2025-07-12', [], TODAY)
-    const groups = groupByVisit(upcomingDoses(s, TODAY, 3650))
-    const twelve = groups.find((g) => g.label === '12 mois')!
-    expect(twelve.state).toBe('due')
-  })
-
-  it('trie les rendez-vous par date cible croissante', () => {
-    const groups = groupByVisit(upcomingDoses(computeStatus(fr, '2025-07-12', [], TODAY), TODAY, 3650))
-    const dates = groups.map((g) => g.targetDate)
-    expect([...dates].sort()).toEqual(dates)
+  it('signale les inscriptions importées non relues', () => {
+    const birth = '2025-01-10'
+    const events = [event({ valences: ['DTP'], date: '2025-03-12', verifiedByUser: false })]
+    const s = summarise(computeStatus(fr, birth, events), birth, TODAY)
+    expect(s.unverifiedCount).toBe(1)
   })
 })

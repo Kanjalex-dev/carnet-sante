@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { isISODate, today } from '../domain/dates'
 import { Button } from './atoms'
+import { ONBOARDING_DISCLAIMER as D } from './legal'
 
 export function Onboarding({ onCreate }: {
   onCreate: (v: { firstName: string; birthDate: string; sex: 'F' | 'M' }) => void
@@ -8,6 +9,9 @@ export function Onboarding({ onCreate }: {
   const [firstName, setFirstName] = useState('')
   const [birthDate, setBirthDate] = useState('')
   const [sex, setSex] = useState<'F' | 'M'>('F')
+  // L'avertissement passe AVANT la saisie : il dit ce que l'outil est, et
+  // le parent le valide avant d'y mettre quoi que ce soit.
+  const [accepted, setAccepted] = useState(false)
 
   const validDate = isISODate(birthDate) && birthDate <= today()
   const ready = firstName.trim().length > 0 && validDate
@@ -18,11 +22,20 @@ export function Onboarding({ onCreate }: {
         <div className="h-9 w-9 rounded-full" style={{ background: 'linear-gradient(140deg,#275C94 0%,#C46B8B 100%)' }} />
         <h1 className="font-display m-0 text-[30px] leading-tight font-medium tracking-tight">Carnet</h1>
         <p className="text-ink-muted m-0 text-[15px]">
-          Le suivi vaccinal de votre enfant, de la naissance à l'âge adulte. Les données restent
-          sur cet appareil.
+          Le carnet de santé de votre enfant, avec vous. Les données restent sur cet appareil.
         </p>
       </header>
 
+      {!accepted && (
+        <section className="border-line-strong bg-surface flex flex-col gap-3 rounded-[12px] border p-4">
+          <h2 className="m-0 text-[17px] font-semibold tracking-tight">{D.title}</h2>
+          <p className="text-ink-strong m-0 text-[14px] leading-snug text-pretty">{D.body}</p>
+          <p className="text-ink-muted m-0 text-[12.5px] leading-snug text-pretty">{D.footer}</p>
+          <Button onClick={() => setAccepted(true)}>{D.accept}</Button>
+        </section>
+      )}
+
+      {accepted && (
       <form
         className="flex flex-col gap-5"
         onSubmit={(e) => { e.preventDefault(); if (ready) onCreate({ firstName: firstName.trim(), birthDate, sex }) }}
@@ -69,6 +82,7 @@ export function Onboarding({ onCreate }: {
 
         <Button type="submit">Créer le carnet</Button>
       </form>
+      )}
     </main>
   )
 }

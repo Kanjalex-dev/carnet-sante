@@ -1,5 +1,5 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib'
-import { computeStatus, upcomingDoses } from '../domain/status'
+import { computeStatus } from '../domain/status'
 import type { Child, Schedule, VaccinationEvent } from '../domain/types'
 import { type AttachmentMeta, readAttachment } from './repository'
 import { today as todayFn } from '../domain/dates'
@@ -25,7 +25,6 @@ const BLUE = rgb(0.180, 0.361, 0.541)
 const ROSE = rgb(0.769, 0.420, 0.545)
 const OK = rgb(0.184, 0.478, 0.341)
 const DUE = rgb(0.588, 0.388, 0.102)
-const LATE = rgb(0.737, 0.275, 0.149)
 const TINT = rgb(0.992, 0.980, 0.965)
 const PAPER = rgb(0.980, 0.969, 0.973)
 
@@ -95,10 +94,14 @@ export async function buildRecap(
     codes.map((c) => labels.get(c) ?? c).join(', ')
 
   const live = events.filter((e) => !e.deletedAt).sort((a, b) => (a.date < b.date ? -1 : 1))
-  const statuses = computeStatus(schedule, child.birthDate, events, today)
+  const statuses = computeStatus(schedule, child.birthDate, events)
   const mandatory = statuses.filter((v) => v.mandatory)
-  const satisfied = mandatory.filter((v) => !v.hasLate).length
-  const remaining = upcomingDoses(statuses, today).filter((x) => x.state === 'late' || x.state === 'due')
+  const satisfied = mandatory.filter((v) => v.complete).length
+  // Ce que le carnet ne porte pas encore. Le document constate une absence
+  // d'inscription ; il ne prescrit aucune date et n'affirme aucun retard.
+  const remaining = statuses
+    .flatMap((v) => v.doses)
+    .filter((x) => x.state === 'not-recorded')
 
   const photoPages = options.includePhotos ? attachments.length : 0
   const total = 1 + photoPages
@@ -126,7 +129,7 @@ function drawRecapPage(page: PDFPage, f: Fonts, ctx: {
   child: Child; schedule: Schedule; live: VaccinationEvent[]
   readable: (codes: string[]) => string
   statuses: { total: number; satisfied: number }
-  remaining: { shortLabel: string; doseNumber: number; targetDate: string; state: string }[]
+  remaining: { shortLabel: string; doseNumber: number; targetAgeMonths: number }[]
   options: RecapOptions; today: string; total: number
 }) {
   const { width, height } = page.getSize()
@@ -240,14 +243,14 @@ function drawRecapPage(page: PDFPage, f: Fonts, ctx: {
     borderColor: none ? LINE : rgb(0.953, 0.847, 0.804),
     borderWidth: 1,
   })
-  text(page, 'RESTE À RÉALISER', x2 + 12, y - 18, 7.5, f.bold, none ? INK_MUTED : LATE)
+  text(page, 'NON INSCRIT AU CARNET', x2 + 12, y - 18, 7.5, f.bold, none ? INK_MUTED : INK_STRONG)
   if (none) {
-    text(page, 'Rien à réaliser à ce jour.', x2 + 12, y - 36, 10, f.regular, INK)
+    text(page, 'Toutes les lignes sont inscrites.', x2 + 12, y - 36, 10, f.regular, INK)
     wrap("Au regard du calendrier applicable et des dates enregistrées.", f.regular, 8, half - 24)
       .forEach((l, i) => text(page, l, x2 + 12, y - 50 - i * 10, 8, f.regular, INK_MUTED))
   } else {
     ctx.remaining.slice(0, 4).forEach((r, i) => {
-      text(page, `${r.shortLabel} — dose ${r.doseNumber}, cible ${d(r.targetDate)}`, x2 + 12, y - 34 - i * 12, 8.5, f.regular, INK)
+      text(page, `${r.shortLabel} — dose ${r.doseNumber}, prévue à ${r.targetAgeMonths} mois`, x2 + 12, y - 34 - i * 12, 8.5, f.regular, INK)
     })
     if (ctx.remaining.length > 4) {
       text(page, `et ${ctx.remaining.length - 4} autre(s).`, x2 + 12, y - 34 - 4 * 12, 8.5, f.regular, INK_MUTED)

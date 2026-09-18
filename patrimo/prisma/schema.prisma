@@ -1,0 +1,602 @@
+// Patrimo — schema de donnees.
+//
+// Principe directeur : les transactions et leur categorisation sont la source de
+// verite unique. Les deux modes budgetaires (Suivi facon Bankin, Enveloppes facon
+// YNAB) sont des *couches de lecture et d'allocation* posees par-dessus, stockees
+// dans des tables separees. Basculer d'un mode a l'autre ne touche jamais aux
+// transactions : c'est ce qui garantit qu'aucun historique n'est perdu.
+//
+// Second principe : chaque profil est etanche. L'application est faite pour etre
+// installee une fois et partagee avec un proche, or partager un serveur ne doit
+// pas vouloir dire partager ses comptes. Chaque table qui contient des donnees
+// personnelles porte donc une colonne profileId NON NULLE, et toutes les
+// contraintes d'unicite sont portees au niveau du profil : deux profils peuvent
+// avoir chacun un compte "Compte courant" sans se marcher dessus.
+//
+// Les seules tables communes sont les cours de bourse et les indices : ce sont
+// des donnees de marche, identiques pour tout le monde, et les partager evite de
+// telecharger deux fois la meme serie.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Profils
+// ---------------------------------------------------------------------------
+
+enum BudgetMode {
+  TRACKING // facon Bankin : on constate a posteriori, budget mensuel par categorie
+  ENVELOPE // facon YNAB : base zero, chaque euro est alloue avant d'etre depense
+}
+
+model Profile {
+  id      String @id @default(cuid())
+  name    String @unique
+  pinHash String
+  // Le premier profil cree est proprietaire de l'installation : lui seul peut
+  // ajouter ou supprimer d'autres profils. Sans cela, un invite pourrait
+  // supprimer le profil de celui qui heberge le serveur.
+  isOwner Boolean @default(false)
+  // Couleur d'identification, affichee sur l'ecran de choix du profil.
+  color   String @default("#3d7ea6")
+  sortOrder Int   @default(0)
+
+  // --- Reglages, propres a chaque profil ---
+  budgetMode    BudgetMode @default(TRACKING)
+  currency      String     @default("EUR")
+  monthStartDay Int        @default(1) // certains vivent en mois "du 5 au 5"
+  // Profil investisseur, utilise par le moteur de recommandations patrimoniales.
+  riskProfile   Int        @default(5) // 1 (prudent) .. 10 (offensif)
+  horizonYears  Int        @default(15)
+  aiEnabled     Boolean    @default(true)
+  // Vrai tant que le parcours de demarrage n'a pas ete termine.
+  onboarded     Boolean    @default(false)
+
+  failedPinAttempts Int       @default(0)
+  lockedUntil       DateTime?
+  lastSeenAt        DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  accounts      Account[]
+  categories    Category[]
+  transactions  Transaction[]
+  imports       ImportBatch[]
+  rules         CategoryRule[]
+  budgets       Budget[]
+  envelopes     Envelope[]
+  allocations   EnvelopeAllocation[]
+  transfers     EnvelopeTransfer[]
+  recurring     RecurringSeries[]
+  alertRules    AlertRule[]
+  alertEvents   AlertEvent[]
+  assetAccounts AssetAccount[]
+  holdings      Holding[]
+  snapshots     ValuationSnapshot[]
+  assetTx       AssetTransaction[]
+  syncLogs      SyncLog[]
+}
+
+// ---------------------------------------------------------------------------
+// Module 1 — Budget
+// ---------------------------------------------------------------------------
+
+enum AccountKind {
+  CHECKING
+  SAVINGS
+  CARD
+  CASH
+}
+
+model Account {
+  id          String      @id @default(cuid())
+  profileId   String
+  profile     Profile     @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  name        String
+  institution String?
+  kind        AccountKind @default(CHECKING)
+  iban        String? // stocke chiffre (AES-256-GCM) ou null
+  // Identifiant du compte tel qu'il apparait dans les exports de la banque
+  // (colonne accountNum chez BoursoBank). Permet de repartir automatiquement
+  // les operations quand un seul fichier melange plusieurs comptes.
+  externalRef String?
+  currency    String      @default("EUR")
+  // Solde declare par le releve le plus recent, sert d'ancre au previsionnel.
+  statedBalance     Decimal?  @db.Decimal(14, 2)
+  statedBalanceDate DateTime?
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  transactions      Transaction[]
+  imports           ImportBatch[]
+
+  @@unique([profileId, name])
+  @@unique([profileId, externalRef])
+  @@index([profileId])
+}
+
+enum CategoryKind {
+  EXPENSE
+  INCOME
+  TRANSFER
+}
+
+model Category {
+  id        String       @id @default(cuid())
+  profileId String
+  profile   Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  name      String
+  kind      CategoryKind @default(EXPENSE)
+  icon      String       @default("•")
+  color     String       @default("#8b8b8b")
+  parentId  String?
+  parent    Category?    @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children  Category[]   @relation("CategoryTree")
+  // Une categorie systeme ne peut pas etre supprimee (ex : "Non categorise").
+  isSystem  Boolean      @default(false)
+  sortOrder Int          @default(0)
+  archived  Boolean      @default(false)
+
+  transactions Transaction[]
+  rules        CategoryRule[]
+  budgets      Budget[]
+  envelopes    Envelope[]
+  recurring    RecurringSeries[]
+
+  @@unique([profileId, name, parentId])
+  @@index([profileId])
+}
+
+enum CategorySource {
+  IMPORT_RULE // regle deterministe declenchee a l'import
+  AI // classification par modele
+  MANUAL // l'utilisateur a tranche
+  LEARNED // regle apprise a partir d'une correction manuelle
+  UNSET
+}
+
+model Transaction {
+  id        String   @id @default(cuid())
+  profileId String
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  accountId String
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date // date d'operation
+  valueDate DateTime? @db.Date // date de valeur si le releve la fournit
+  amount    Decimal  @db.Decimal(14, 2) // negatif = depense, positif = entree
+  // Libelle brut du releve, jamais modifie : il sert d'empreinte et de preuve.
+  rawLabel  String
+  // Libelle nettoye (enseigne devinee), affiche dans l'interface.
+  label     String
+  merchant  String?
+  categoryId     String?
+  category       Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categorySource CategorySource @default(UNSET)
+  aiConfidence   Float?
+  notes          String?
+
+  // Un virement interne entre deux comptes suivis : exclu des depenses.
+  isTransfer     Boolean @default(false)
+  transferPairId String?
+
+  // Rattachement a une serie recurrente detectee.
+  recurringSeriesId String?
+  recurringSeries   RecurringSeries? @relation(fields: [recurringSeriesId], references: [id], onDelete: SetNull)
+
+  // Mode Enveloppes : a quelle enveloppe la depense est imputee. Nul en mode Suivi,
+  // et conserve si l'on rebascule en mode Suivi (aucune perte).
+  envelopeId String?
+  envelope   Envelope? @relation(fields: [envelopeId], references: [id], onDelete: SetNull)
+
+  importBatchId String?
+  importBatch   ImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+
+  // Empreinte anti-doublon : hash(compte, date, montant, libelle brut, rang du jour).
+  // Le hash contient l'identifiant du compte, qui est unique a l'echelle de la
+  // base : deux profils ne peuvent donc pas produire la meme empreinte.
+  fingerprint String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([profileId, date])
+  @@index([accountId, date])
+  @@index([categoryId])
+  @@index([envelopeId])
+}
+
+enum ImportFormat {
+  CSV
+  OFX
+  QIF
+}
+
+model ImportBatch {
+  id            String       @id @default(cuid())
+  profileId     String
+  profile       Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  accountId     String
+  account       Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  filename      String
+  format        ImportFormat
+  profileUsed   String? // nom du profil bancaire detecte
+  rowsParsed    Int          @default(0)
+  rowsInserted  Int          @default(0)
+  rowsDuplicate Int          @default(0)
+  rowsRejected  Int          @default(0)
+  warnings      Json?
+  importedAt    DateTime     @default(now())
+  transactions  Transaction[]
+
+  @@index([profileId, importedAt])
+}
+
+enum RuleMatch {
+  CONTAINS
+  STARTS_WITH
+  REGEX
+  EXACT
+}
+
+model CategoryRule {
+  id        String  @id @default(cuid())
+  profileId String
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  // Motif applique au libelle brut normalise (majuscules, sans accents).
+  pattern    String
+  match      RuleMatch @default(CONTAINS)
+  categoryId String
+  category   Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  // Contraintes optionnelles pour lever les ambiguites (ex : PAYPAL selon montant).
+  amountMin Decimal? @db.Decimal(14, 2)
+  amountMax Decimal? @db.Decimal(14, 2)
+  priority  Int      @default(100) // plus petit = evalue en premier
+  learned   Boolean  @default(false)
+  hits      Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@unique([profileId, pattern, match, amountMin, amountMax])
+  @@index([profileId, priority])
+}
+
+// --- Mode Suivi (Bankin) -----------------------------------------------------
+
+model Budget {
+  id         String   @id @default(cuid())
+  profileId  String
+  profile    Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  month      String // "2026-09"
+  amount     Decimal  @db.Decimal(14, 2)
+  // Reconduire automatiquement ce montant sur le mois suivant.
+  rollover   Boolean  @default(true)
+
+  @@unique([categoryId, month])
+  @@index([profileId, month])
+}
+
+// --- Mode Enveloppes (YNAB) --------------------------------------------------
+
+enum EnvelopeTarget {
+  NONE
+  MONTHLY // remettre X chaque mois
+  BY_DATE // atteindre X pour une date
+  BALANCE // maintenir un solde de X
+}
+
+model Envelope {
+  id        String  @id @default(cuid())
+  profileId String
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  name      String
+  // Une enveloppe s'adosse a une categorie : c'est ce lien qui permet de
+  // basculer d'un mode a l'autre sans re-saisie.
+  categoryId   String?
+  category     Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  group        String         @default("Depenses")
+  sortOrder    Int            @default(0)
+  targetType   EnvelopeTarget @default(NONE)
+  targetAmount Decimal?       @db.Decimal(14, 2)
+  targetDate   DateTime?      @db.Date
+  archived     Boolean        @default(false)
+
+  allocations  EnvelopeAllocation[]
+  transactions Transaction[]
+  transfersOut EnvelopeTransfer[]   @relation("TransferFrom")
+  transfersIn  EnvelopeTransfer[]   @relation("TransferTo")
+
+  @@unique([profileId, name])
+  @@index([profileId])
+}
+
+model EnvelopeAllocation {
+  id         String   @id @default(cuid())
+  profileId  String
+  profile    Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  envelopeId String
+  envelope   Envelope @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
+  month      String // "2026-09"
+  allocated  Decimal  @default(0) @db.Decimal(14, 2)
+
+  @@unique([envelopeId, month])
+  @@index([profileId, month])
+}
+
+model EnvelopeTransfer {
+  id             String    @id @default(cuid())
+  profileId      String
+  profile        Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  month          String
+  fromEnvelopeId String?
+  fromEnvelope   Envelope? @relation("TransferFrom", fields: [fromEnvelopeId], references: [id], onDelete: SetNull)
+  toEnvelopeId   String?
+  toEnvelope     Envelope? @relation("TransferTo", fields: [toEnvelopeId], references: [id], onDelete: SetNull)
+  amount         Decimal   @db.Decimal(14, 2)
+  note           String?
+  createdAt      DateTime  @default(now())
+
+  @@index([profileId, month])
+}
+
+// --- Recurrences et abonnements ---------------------------------------------
+
+enum Frequency {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  BIMONTHLY
+  QUARTERLY
+  SEMIANNUAL
+  ANNUAL
+  IRREGULAR
+}
+
+enum SeriesStatus {
+  ACTIVE
+  PAUSED
+  ENDED
+  IGNORED
+}
+
+model RecurringSeries {
+  id        String  @id @default(cuid())
+  profileId String
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  // Cle de regroupement derivee du libelle normalise.
+  key        String
+  label      String
+  merchant   String?
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  frequency  Frequency @default(MONTHLY)
+  amountAvg  Decimal   @db.Decimal(14, 2)
+  amountLast Decimal   @db.Decimal(14, 2)
+  amountMin  Decimal   @db.Decimal(14, 2)
+  amountMax  Decimal   @db.Decimal(14, 2)
+  dayOfMonth Int?
+  occurrences  Int       @default(0)
+  firstSeen    DateTime  @db.Date
+  lastSeen     DateTime  @db.Date
+  nextExpected DateTime? @db.Date
+  confidence   Float     @default(0)
+  // Un abonnement est une recurrence a montant stable et libelle marchand connu.
+  isSubscription Boolean      @default(false)
+  status         SeriesStatus @default(ACTIVE)
+  updatedAt      DateTime     @updatedAt
+
+  transactions Transaction[]
+
+  @@unique([profileId, key])
+  @@index([profileId])
+}
+
+// --- Alertes -----------------------------------------------------------------
+
+enum AlertType {
+  BUDGET_OVERRUN // depassement d'un budget / enveloppe
+  LOW_BALANCE // solde projete sous un seuil
+  LARGE_UPCOMING // gros prelevement a venir
+  LARGE_TRANSACTION // transaction inhabituelle
+  NEW_SUBSCRIPTION // nouvel abonnement detecte
+  PRICE_INCREASE // hausse du montant d'un abonnement
+  PORTFOLIO_DRIFT // derive d'allocation du portefeuille
+  PORTFOLIO_MOVE // mouvement de marche significatif
+}
+
+model AlertRule {
+  id        String    @id @default(cuid())
+  profileId String
+  profile   Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  type      AlertType
+  enabled   Boolean   @default(true)
+  // Parametres specifiques au type : { threshold: 500 }, { percent: 90 }, ...
+  config    Json      @default("{}")
+  createdAt DateTime  @default(now())
+  events    AlertEvent[]
+
+  @@unique([profileId, type])
+}
+
+model AlertEvent {
+  id        String    @id @default(cuid())
+  profileId String
+  profile   Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  ruleId    String
+  rule      AlertRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  severity  String    @default("info") // info | warn | critical
+  payload   Json?
+  // Cle d'idempotence : evite de re-notifier le meme fait chaque nuit.
+  dedupeKey String
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@unique([profileId, dedupeKey])
+  @@index([profileId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Module 2 — Patrimoine
+// ---------------------------------------------------------------------------
+
+enum AssetProvider {
+  TRADE_REPUBLIC
+  YOMONI
+  MANUAL
+}
+
+enum AssetClass {
+  EQUITY
+  ETF
+  BOND
+  EURO_FUND // fonds euros d'assurance vie
+  REAL_ESTATE
+  CRYPTO
+  CASH
+  OTHER
+}
+
+model AssetAccount {
+  id        String        @id @default(cuid())
+  profileId String
+  profile   Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  provider  AssetProvider
+  label     String
+  currency  String        @default("EUR")
+  // Credentials du connecteur, chiffres AES-256-GCM. Jamais renvoyes au client.
+  credentialsEnc String?
+  // Etat opaque du connecteur (cookies de session, refresh token, curseurs).
+  connectorState Json?
+  lastSyncAt     DateTime?
+  lastSyncError  String?
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+
+  holdings     Holding[]
+  snapshots    ValuationSnapshot[]
+  transactions AssetTransaction[]
+
+  @@unique([profileId, provider, label])
+  @@index([profileId])
+}
+
+model Holding {
+  id             String       @id @default(cuid())
+  profileId      String
+  profile        Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  assetAccountId String
+  assetAccount   AssetAccount @relation(fields: [assetAccountId], references: [id], onDelete: Cascade)
+  isin       String?
+  symbol     String?
+  name       String
+  assetClass AssetClass @default(OTHER)
+  quantity   Decimal    @db.Decimal(20, 8)
+  unitPrice  Decimal    @db.Decimal(20, 8)
+  value      Decimal    @db.Decimal(16, 2)
+  costBasis  Decimal?   @db.Decimal(16, 2)
+  currency   String     @default("EUR")
+  asOf       DateTime
+  updatedAt  DateTime   @updatedAt
+
+  @@unique([assetAccountId, isin, symbol])
+  @@index([profileId])
+}
+
+model ValuationSnapshot {
+  id        String  @id @default(cuid())
+  profileId String
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  // Null = ligne consolidee tous comptes confondus, pour ce profil.
+  assetAccountId String?
+  assetAccount   AssetAccount? @relation(fields: [assetAccountId], references: [id], onDelete: Cascade)
+  date       DateTime @db.Date
+  totalValue Decimal  @db.Decimal(16, 2)
+  invested   Decimal? @db.Decimal(16, 2)
+  // Repartition par classe d'actifs a cette date : { "ETF": 12000, "EURO_FUND": 3000 }
+  breakdown  Json?
+
+  // Postgres ne fait pas respecter l'unicite quand une colonne est NULL : la
+  // contrainte ci-dessous ne couvre donc PAS les lignes consolidees. C'est
+  // l'index unique partiel de la migration qui s'en charge (profileId, date)
+  // quand assetAccountId est nul.
+  @@unique([assetAccountId, date])
+  @@index([profileId, date])
+}
+
+enum AssetTxType {
+  BUY
+  SELL
+  DIVIDEND
+  DEPOSIT
+  WITHDRAWAL
+  FEE
+  INTEREST
+  ARBITRAGE
+}
+
+model AssetTransaction {
+  id             String       @id @default(cuid())
+  profileId      String
+  profile        Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  assetAccountId String
+  assetAccount   AssetAccount @relation(fields: [assetAccountId], references: [id], onDelete: Cascade)
+  date       DateTime    @db.Date
+  type       AssetTxType
+  isin       String?
+  symbol     String?
+  name       String?
+  quantity   Decimal?    @db.Decimal(20, 8)
+  price      Decimal?    @db.Decimal(20, 8)
+  amount     Decimal     @db.Decimal(16, 2)
+  fees       Decimal?    @db.Decimal(16, 2)
+  currency   String      @default("EUR")
+  externalId String?
+  // Comme pour les transactions bancaires, l'empreinte contient l'identifiant du
+  // compte, unique a l'echelle de la base : pas de collision entre profils.
+  fingerprint String @unique
+
+  @@index([assetAccountId, date])
+  @@index([profileId, date])
+}
+
+// Cours de cloture, pour valoriser les positions et comparer aux indices.
+// Donnee de marche : commune a tous les profils.
+model Quote {
+  id       String   @id @default(cuid())
+  symbol   String
+  date     DateTime @db.Date
+  close    Decimal  @db.Decimal(20, 8)
+  currency String   @default("EUR")
+
+  @@unique([symbol, date])
+  @@index([symbol, date])
+}
+
+// Indices de reference suivis pour la comparaison de performance. Commun.
+model Benchmark {
+  id      String  @id @default(cuid())
+  key     String  @unique // "CAC40", "MSCI_WORLD"
+  label   String
+  symbol  String // symbole utilise aupres du fournisseur de cotations
+  enabled Boolean @default(true)
+}
+
+// Journal des synchronisations, pour diagnostiquer un connecteur qui casse.
+model SyncLog {
+  id         String   @id @default(cuid())
+  profileId  String?
+  profile    Profile? @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  provider   String
+  ok         Boolean
+  message    String?
+  durationMs Int?
+  createdAt  DateTime @default(now())
+
+  @@index([profileId, createdAt])
+}

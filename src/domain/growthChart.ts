@@ -1,14 +1,14 @@
-import { valueAtZScore, zScoreToPercentile } from 'who-growth-standards'
+import { valueAtZScore } from 'who-growth-standards'
 import { daysBetween, type ISODate } from './dates'
 import type { GrowthMeasure } from './types'
 
 /**
  * Courbes de croissance, référence OMS 0–5 ans.
  *
- * L'application place une mesure par rapport à une population de référence.
- * Elle n'interprète pas : une croissance hors des couloirs peut être
- * parfaitement normale pour un enfant donné, et l'inverse est vrai aussi.
- * Ce jugement appartient au médecin qui voit l'enfant.
+ * L'application reporte les mesures saisies sur les courbes de référence,
+ * exactement comme on les reporte sur les pages du carnet papier. Elle ne
+ * restitue ni centile ni écart-type : situer un enfant sur une échelle, c'est
+ * déjà une interprétation, et elle appartient au médecin qui le voit.
  */
 
 export type Indicator = 'weight' | 'height' | 'head'
@@ -68,8 +68,6 @@ export interface PlottedMeasure {
   date: ISODate
   ageDays: number
   value: number
-  zScore: number
-  percentile: number
   verified: boolean
 }
 
@@ -78,7 +76,6 @@ export function plotMeasures(
   measures: GrowthMeasure[],
   birthDate: ISODate,
   indicator: Indicator,
-  sex: Sex,
 ): { points: PlottedMeasure[]; outOfRange: number } {
   const points: PlottedMeasure[] = []
   let outOfRange = 0
@@ -91,47 +88,15 @@ export function plotMeasures(
     const ageDays = daysBetween(birthDate, m.date)
     if (ageDays < 0 || ageDays > MAX_AGE_DAYS) { outOfRange += 1; continue }
 
-    const median = valueAtZScore(TABLE[indicator], sexKey(sex), 0, ageDays)
-    const z = solveZ(indicator, sex, ageDays, value, median)
     points.push({
       id: m.id,
       date: m.date,
       ageDays,
       value,
-      zScore: z,
-      percentile: zScoreToPercentile(z),
       verified: m.verifiedByUser,
     })
   }
 
   points.sort((a, b) => a.ageDays - b.ageDays)
   return { points, outOfRange }
-}
-
-/**
- * Retrouve l'écart-type d'une mesure par dichotomie sur la courbe de référence.
- * Passer par `valueAtZScore` évite de réimplémenter la formule LMS : la seule
- * source de vérité reste la table OMS.
- */
-function solveZ(
-  indicator: Indicator, sex: Sex, ageDays: number, value: number, median: number,
-): number {
-  if (value === median) return 0
-  let lo = -6
-  let hi = 6
-  for (let i = 0; i < 40; i += 1) {
-    const mid = (lo + hi) / 2
-    const v = valueAtZScore(TABLE[indicator], sexKey(sex), mid, ageDays)
-    if (v < value) lo = mid
-    else hi = mid
-  }
-  return (lo + hi) / 2
-}
-
-/** Formulation neutre de la position, sans jugement. */
-export function positionLabel(percentile: number): string {
-  const p = Math.round(percentile)
-  if (p <= 1) return 'sous le 1ᵉʳ centile'
-  if (p >= 99) return 'au-dessus du 99ᵉ centile'
-  return `${p}ᵉ centile`
 }

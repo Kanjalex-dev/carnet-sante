@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react'
 import { isISODate, today } from '../domain/dates'
 import {
-  type Indicator, INDICATORS, plotMeasures, positionLabel, valueOf,
+  type Indicator, INDICATORS, plotMeasures, valueOf,
 } from '../domain/growthChart'
 import type { Child, GrowthMeasure } from '../domain/types'
 import { Button } from './atoms'
 import { Explainable } from './Explain'
-import { growthExplanation, percentileExplanation } from './explanations'
+import { growthExplanation } from './explanations'
 import { GrowthChart } from './GrowthChart'
 import { frDate, humanAge } from './format'
 import { ageInMonths } from '../domain/dates'
@@ -30,7 +30,7 @@ export function Growth({ child, measures, onAdd, onDelete }: {
 
   const spec = INDICATORS.find((i) => i.key === indicator)!
   const { points, outOfRange } = useMemo(
-    () => plotMeasures(measures, child.birthDate, indicator, child.sex),
+    () => plotMeasures(measures, child.birthDate, indicator),
     [measures, child.birthDate, child.sex, indicator],
   )
   const current = points.find((p) => p.id === selected) ?? points[points.length - 1]
@@ -88,10 +88,6 @@ export function Growth({ child, measures, onAdd, onDelete }: {
                     {!current.verified && ' · non vérifié'}
                   </p>
                 </div>
-                <Explainable explanation={percentileExplanation(current.percentile, spec.label)}
-                  className="text-blue-700 shrink-0 text-[12.5px] font-semibold">
-                  <span>{positionLabel(current.percentile)}</span>
-                </Explainable>
               </div>
             )}
           </>

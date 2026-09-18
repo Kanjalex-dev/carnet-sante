@@ -1,0 +1,1322 @@
+<title>Installer Patrimo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+
+<style>
+  /* ---------------------------------------------------------------------
+     Jetons. Le bloc :root porte la palette claire complete ; les deux blocs
+     qui suivent ne redefinissent que des jetons, jamais des composants.
+     --------------------------------------------------------------------- */
+  :root {
+    --ground:      #fbfaf8;   /* papier tres legerement chaud */
+    --surface:     #ffffff;
+    --surface-sunk:#f2f0ec;
+    --line:        #e2dfd8;
+    --line-strong: #c9c5bb;
+    --ink:         #17191e;   /* noir a biais bleu, contre l'accent */
+    --ink-soft:    #565b66;
+    --ink-faint:   #8a8f9a;
+    --accent:      #1f5aa0;
+    --accent-soft: #e8eff8;
+    --warn:        #8a5d0c;
+    --warn-soft:   #f8f0dd;
+    --term-bg:     #15181e;
+    --term-ink:    #d9dde5;
+    --term-dim:    #7d8697;
+    --term-line:   #2a2f39;
+    --shadow:      0 1px 2px rgba(23,25,30,.05), 0 8px 24px -12px rgba(23,25,30,.12);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #131519;
+      --surface:     #1a1d23;
+      --surface-sunk:#22262d;
+      --line:        #2c313a;
+      --line-strong: #3d434e;
+      --ink:         #e9e7e3;
+      --ink-soft:    #a5abb6;
+      --ink-faint:   #767d89;
+      --accent:      #7fb2ea;
+      --accent-soft: #1c2836;
+      --warn:        #e0b25c;
+      --warn-soft:   #2b2416;
+      --term-bg:     #0e1015;
+      --term-ink:    #d9dde5;
+      --term-dim:    #767f90;
+      --term-line:   #242932;
+      --shadow:      0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:      #131519;
+    --surface:     #1a1d23;
+    --surface-sunk:#22262d;
+    --line:        #2c313a;
+    --line-strong: #3d434e;
+    --ink:         #e9e7e3;
+    --ink-soft:    #a5abb6;
+    --ink-faint:   #767d89;
+    --accent:      #7fb2ea;
+    --accent-soft: #1c2836;
+    --warn:        #e0b25c;
+    --warn-soft:   #2b2416;
+    --term-bg:     #0e1015;
+    --term-ink:    #d9dde5;
+    --term-dim:    #767f90;
+    --term-line:   #242932;
+    --shadow:      0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: 'Source Sans 3', ui-sans-serif, system-ui, sans-serif;
+    font-size: 17px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 0 24px 96px;
+  }
+
+  /* --- Typographie ---------------------------------------------------- */
+
+  h1, h2, h3, .eyebrow, .tab, .num {
+    font-family: 'Archivo', ui-sans-serif, system-ui, sans-serif;
+  }
+
+  h1 {
+    font-size: clamp(2.1rem, 5.5vw, 3rem);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.05;
+    text-wrap: balance;
+    margin: 0 0 .5rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.2;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  h3 {
+    font-size: 1.06rem;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    margin: 0 0 .35rem;
+  }
+
+  .eyebrow {
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  p { margin: 0; max-width: 66ch; }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  strong { font-weight: 600; }
+  code {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: .86em;
+    background: var(--surface-sunk);
+    border-radius: 3px;
+    padding: .1em .35em;
+  }
+
+  /* --- En-tete --------------------------------------------------------- */
+
+  header {
+    border-bottom: 1px solid var(--line);
+    padding: 72px 0 40px;
+    margin-bottom: 56px;
+  }
+  header p { color: var(--ink-soft); font-size: 1.12rem; }
+  .lede { margin-top: 1rem !important; }
+
+  /* --- Rythme vertical -------------------------------------------------
+     Une seule regle d'espacement entre blocs frere : pas de marges
+     par element qui se battent dans la cascade. */
+
+  section { margin-bottom: 72px; }
+  .stack { display: flex; flex-direction: column; gap: 20px; }
+  .stack-tight { display: flex; flex-direction: column; gap: 10px; }
+
+  /* --- Les trois voies -------------------------------------------------- */
+
+  .routes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 14px;
+  }
+  .route {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  /* Une seule voie est mise en avant : c'est la recommandation. */
+  .route--pick {
+    border-color: var(--accent);
+    box-shadow: var(--shadow);
+  }
+  .route .tag {
+    font-family: 'Archivo', sans-serif;
+    font-size: .68rem;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .route h3 { margin: 0; }
+  .route p { font-size: .93rem; color: var(--ink-soft); }
+  .route .cost {
+    margin-top: auto;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+    font-size: .84rem;
+    color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* --- Etapes numerotees ------------------------------------------------
+     La numerotation encode une vraie sequence : chaque etape suppose la
+     precedente. Elle n'est pas decorative. */
+
+  .step {
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    gap: 18px;
+    margin-bottom: 44px;
+  }
+  .num {
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
+    border-top: 2px solid var(--line-strong);
+    padding-top: 6px;
+  }
+  .step-body { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+  /* --- Onglets de plateforme -------------------------------------------- */
+
+  .tabs {
+    display: inline-flex;
+    gap: 2px;
+    background: var(--surface-sunk);
+    border-radius: 8px;
+    padding: 3px;
+  }
+  .tab {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: var(--ink-soft);
+    font-size: .87rem;
+    font-weight: 500;
+    padding: 7px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background .12s, color .12s;
+  }
+  .tab[aria-selected="true"] {
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: 0 1px 2px rgba(0,0,0,.08);
+  }
+  .tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* --- Terminal ---------------------------------------------------------- */
+
+  .term {
+    background: var(--term-bg);
+    border-radius: 9px;
+    overflow: hidden;
+    border: 1px solid var(--term-line);
+  }
+  .term-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 10px 7px 13px;
+    border-bottom: 1px solid var(--term-line);
+  }
+  .term-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .7rem;
+    letter-spacing: .06em;
+    color: var(--term-dim);
+    text-transform: uppercase;
+  }
+  .copy {
+    appearance: none;
+    border: 1px solid var(--term-line);
+    background: transparent;
+    color: var(--term-dim);
+    font-family: 'Archivo', sans-serif;
+    font-size: .72rem;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .copy:hover { color: var(--term-ink); border-color: var(--term-dim); }
+  .copy:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .term pre {
+    margin: 0;
+    padding: 14px 16px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: .82rem;
+    line-height: 1.75;
+    color: var(--term-ink);
+    tab-size: 2;
+  }
+  .term .p { color: var(--term-dim); user-select: none; }
+  .term .c { color: var(--term-dim); font-style: italic; }
+
+  /* --- Encarts ----------------------------------------------------------- */
+
+  .note {
+    border-left: 2px solid var(--line-strong);
+    padding: 2px 0 2px 16px;
+    font-size: .94rem;
+    color: var(--ink-soft);
+  }
+  .note--warn {
+    border-left-color: var(--warn);
+    background: var(--warn-soft);
+    border-radius: 0 6px 6px 0;
+    padding: 12px 16px;
+    color: var(--ink);
+  }
+  .note strong { color: var(--ink); }
+
+  /* --- Tableau ------------------------------------------------------------ */
+
+  .table-scroll { overflow-x: auto; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: .93rem;
+    min-width: 460px;
+  }
+  th, td {
+    text-align: left;
+    padding: 11px 14px 11px 0;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  th {
+    font-family: 'Archivo', sans-serif;
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    border-bottom-color: var(--line-strong);
+  }
+  td:last-child, th:last-child { padding-right: 0; }
+  .yes { color: var(--accent); font-weight: 600; }
+  .no  { color: var(--ink-faint); }
+
+  /* --- Depannage ---------------------------------------------------------- */
+
+  details {
+    border-bottom: 1px solid var(--line);
+    padding: 14px 0;
+  }
+  details:first-of-type { border-top: 1px solid var(--line); }
+  summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: .97rem;
+    list-style: none;
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::before {
+    content: '+';
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--ink-faint);
+    font-weight: 400;
+  }
+  details[open] summary::before { content: '−'; }
+  summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .answer {
+    padding: 12px 0 2px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-size: .95rem;
+    color: var(--ink-soft);
+  }
+  .answer strong { color: var(--ink); }
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding-top: 28px;
+    color: var(--ink-faint);
+    font-size: .89rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+
+  @media (max-width: 560px) {
+    body { font-size: 16px; }
+    .step { grid-template-columns: 1fr; gap: 10px; }
+    .num { border-top: 0; padding-top: 0; }
+    header { padding-top: 44px; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Suivi budgétaire et patrimonial</div>
+    <h1>Installer Patrimo</h1>
+    <p class="lede">
+      Une application web auto-hébergée, à installer sur son Mac, son PC, ou un
+      serveur — et à ajouter à l'écran d'accueil d'un iPhone comme d'un Android.
+      Partageable avec un proche, chacun son profil. Compter vingt minutes la
+      première fois.
+    </p>
+  </header>
+
+  <!-- ================= LES TROIS VOIES ================= -->
+  <section>
+    <div class="stack">
+      <div class="stack-tight">
+        <div class="eyebrow">D'abord</div>
+        <h2>Choisir sa voie</h2>
+        <p>
+          Les trois installent la même application. Elles diffèrent sur un seul
+          point : depuis où l'on peut y accéder.
+        </p>
+      </div>
+
+      <div class="routes">
+        <div class="route route--pick">
+          <span class="tag">Commencer ici</span>
+          <h3>Sur sa machine</h3>
+          <p>
+            Mac ou PC. Pour vérifier que l'import de ton relevé fonctionne avant
+            d'investir dans quoi que ce soit.
+          </p>
+          <div class="cost">Gratuit · 20 min</div>
+        </div>
+        <div class="route">
+          <span class="tag">Ensuite</span>
+          <h3>Machine + Tailscale</h3>
+          <p>
+            Même installation, plus un accès chiffré depuis l'iPhone où que tu
+            sois. Tant que la machine reste allumée.
+          </p>
+          <div class="cost">Gratuit · +10 min</div>
+        </div>
+        <div class="route">
+          <span class="tag">Usage quotidien</span>
+          <h3>Serveur</h3>
+          <p>
+            Un VPS et un sous-domaine. Disponible en permanence, y compris
+            ordinateur éteint.
+          </p>
+          <div class="cost">≈ 5 €/mois · +30 min</div>
+        </div>
+      </div>
+
+      <p class="note">
+        Les trois se cumulent : ce qui est installé en local se redéploie sur un
+        serveur sans rien réécrire. Seule la base de données ne suit pas — les
+        opérations importées en local sont à réimporter, ce qui ne coûte rien
+        puisque la déduplication empêche les doublons.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= INSTALLATION ================= -->
+  <section>
+    <div class="stack" style="margin-bottom: 32px;">
+      <div class="stack-tight">
+        <div class="eyebrow">Sur sa machine</div>
+        <h2>Installation</h2>
+        <p>
+          Choisis ton système : les commandes ci-dessous s'adaptent.
+        </p>
+      </div>
+      <div class="tabs" role="tablist" aria-label="Système d'exploitation">
+        <button class="tab" role="tab" id="tab-mac" aria-selected="true" aria-controls="os-panels" data-os="mac">macOS</button>
+        <button class="tab" role="tab" id="tab-win" aria-selected="false" aria-controls="os-panels" data-os="win">Windows</button>
+      </div>
+    </div>
+
+    <div id="os-panels">
+
+      <div class="step">
+        <div class="num">01</div>
+        <div class="step-body">
+          <h3>Installer Docker</h3>
+          <p data-os="mac">
+            Docker fait tourner l'application et sa base de données sans rien
+            installer d'autre sur ton système.
+          </p>
+          <p data-os="win" hidden>
+            Docker fait tourner l'application et sa base de données sans rien
+            installer d'autre. Sur Windows, il s'appuie sur WSL 2 — l'installeur
+            le propose et le configure.
+          </p>
+
+          <div class="term" data-os="mac">
+            <div class="term-bar">
+              <span class="term-name">Terminal</span>
+              <button class="copy" type="button">Copier</button>
+            </div>
+            <pre><code><span class="p">$</span> brew install --cask docker</code></pre>
+          </div>
+          <p data-os="mac" class="note">
+            Sans Homebrew, télécharger l'installeur sur
+            <a href="https://www.docker.com/products/docker-desktop/">docker.com</a>.
+            Prendre la version <strong>Apple Silicon</strong> pour un Mac M1 ou
+            plus récent.
+          </p>
+          <p data-os="win" hidden class="note">
+            Télécharger Docker Desktop sur
+            <a href="https://www.docker.com/products/docker-desktop/">docker.com</a>
+            et suivre l'installeur. Un redémarrage est demandé la première fois.
+          </p>
+
+          <p class="note note--warn">
+            <strong>Lance l'application Docker une première fois</strong> avant
+            de continuer. Tant que la baleine n'est pas dans la barre de menus,
+            la commande suivante échouera.
+          </p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="num">02</div>
+        <div class="step-body">
+          <h3>Extraire le projet</h3>
+          <p>
+            Décompresse <code>patrimo.tar.gz</code> là où tu veux garder le
+            projet.
+          </p>
+          <div class="term" data-os="mac">
+            <div class="term-bar">
+              <span class="term-name">Terminal</span>
+              <button class="copy" type="button">Copier</button>
+            </div>
+            <pre><code><span class="p">$</span> cd ~/Documents
+<span class="p">$</span> tar xzf ~/Downloads/patrimo.tar.gz
+<span class="p">$</span> cd patrimo</code></pre>
+          </div>
+          <div class="term" data-os="win" hidden>
+            <div class="term-bar">
+              <span class="term-name">PowerShell</span>
+              <button class="copy" type="button">Copier</button>
+            </div>
+            <pre><code><span class="p">&gt;</span> cd ~\Documents
+<span class="p">&gt;</span> tar -xzf ~\Downloads\patrimo.tar.gz
+<span class="p">&gt;</span> cd patrimo</code></pre>
+          </div>
+          <p data-os="win" hidden class="note">
+            <code>tar</code> est livré avec Windows 10 et 11. Inutile d'installer
+            7-Zip.
+          </p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="num">03</div>
+        <div class="step-body">
+          <h3>Lancer le script d'installation</h3>
+          <p>
+            Il vérifie Docker, génère les clés de chiffrement, écrit la
+            configuration, construit l'image et démarre. Rien à saisir.
+          </p>
+          <div class="term" data-os="mac">
+            <div class="term-bar">
+              <span class="term-name">Terminal</span>
+              <button class="copy" type="button">Copier</button>
+            </div>
+            <pre><code><span class="p">$</span> ./scripts/setup.sh</code></pre>
+          </div>
+          <div class="term" data-os="win" hidden>
+            <div class="term-bar">
+              <span class="term-name">PowerShell</span>
+              <button class="copy" type="button">Copier</button>
+            </div>
+            <pre><code><span class="p">&gt;</span> .\scripts\setup.ps1</code></pre>
+          </div>
+          <p data-os="win" hidden class="note">
+            Si Windows bloque l'exécution, autorise-la pour cette session
+            seulement :
+            <code>Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass</code>
+          </p>
+          <p class="note">
+            La première construction prend trois à cinq minutes. Les suivantes,
+            quelques secondes. Le script attend que l'application réponde avant
+            de rendre la main.
+          </p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="num">04</div>
+        <div class="step-body">
+          <h3>Créer ton profil</h3>
+          <p>
+            Rends-toi sur <a href="http://localhost:3000">localhost:3000</a>.
+            L'application demande un <strong>prénom</strong> et un
+            <strong>code à 4 à 12 chiffres</strong>. Ce premier profil est
+            propriétaire de l'installation : lui seul pourra en ajouter
+            d'autres.
+          </p>
+          <p>
+            Elle propose ensuite deux façons de démarrer — importer un relevé,
+            ou saisir simplement ton solde actuel. Les deux se complètent, et
+            l'écran se saute.
+          </p>
+          <p class="note note--warn">
+            <strong>Ce code n'est pas récupérable.</strong> La page qui crée le
+            premier profil n'est atteignable qu'une seule fois ; ensuite elle
+            redirige vers l'écran de connexion.
+          </p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="num">05</div>
+        <div class="step-body">
+          <h3>Importer un relevé</h3>
+          <p>
+            Depuis l'espace client de ta banque, exporte tes opérations en
+            <strong>OFX</strong> si le format est proposé, sinon en CSV. Puis
+            écran <em>Importer</em> dans l'application.
+          </p>
+          <p class="note">
+            L'OFX porte un identifiant unique par opération et le solde du
+            relevé : la déduplication devient exacte, et le prévisionnel s'ancre
+            sur un solde réel plutôt que sur un cumul de mouvements. Réimporter
+            un fichier déjà traité ne crée jamais de doublon — tu peux y aller
+            sans réfléchir.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= IPHONE ================= -->
+  <section>
+    <div class="stack">
+      <div class="stack-tight">
+        <div class="eyebrow">Sur téléphone</div>
+        <h2>Ajouter à l'écran d'accueil</h2>
+        <p>
+          L'application s'installe comme une vraie app : icône dédiée, plein
+          écran, pas de barre d'adresse. Trois gestes, sur iPhone comme sur
+          Android.
+        </p>
+      </div>
+
+      <div class="term">
+        <div class="term-bar"><span class="term-name">Safari · iOS</span></div>
+        <pre><code><span class="c">Chrome sur iOS ne sait pas installer de PWA. Safari uniquement.</span>
+
+<span class="p">1.</span> Ouvrir l'adresse de l'application dans Safari
+<span class="p">2.</span> Bouton Partager  <span class="c">(le carré avec la flèche)</span>
+<span class="p">3.</span> Sur l'écran d'accueil  →  Ajouter</code></pre>
+      </div>
+
+      <div class="term" style="margin-top: 12px;">
+        <div class="term-bar"><span class="term-name">Chrome · Android</span></div>
+        <pre><code><span class="c">Même application, même adresse. Rien à installer d'autre.</span>
+
+<span class="p">1.</span> Ouvrir l'adresse de l'application dans Chrome
+<span class="p">2.</span> Menu  <span class="c">⋮</span>
+<span class="p">3.</span> Installer l'application  →  Installer
+
+<span class="c">Sur une adresse en http://, Chrome ne propose que</span>
+<span class="c">« Ajouter à l'écran d'accueil » : un raccourci, sans hors ligne.</span></code></pre>
+      </div>
+
+      <h3 style="margin-top: 16px;">Quelle adresse utiliser</h3>
+      <p>
+        C'est ici que le HTTPS entre en jeu — et il ne sert pas à ce qu'on croit.
+        L'ajout à l'écran d'accueil et le plein écran fonctionnent aussi en
+        <code>http://</code>. Ce que le HTTPS débloque, c'est le service worker,
+        donc le mode hors ligne et le cache du code.
+      </p>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Adresse</th>
+              <th>Depuis où</th>
+              <th>Hors ligne</th>
+              <th>Ce qu'il faut</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>http://192.168.x.x:3000</code></td>
+              <td>Le Wi-Fi de la maison</td>
+              <td class="no">non</td>
+              <td>Rien</td>
+            </tr>
+            <tr>
+              <td><code>https://…​.ts.net</code></td>
+              <td>Partout</td>
+              <td class="yes">oui</td>
+              <td>Tailscale</td>
+            </tr>
+            <tr>
+              <td><code>https://finance.mondomaine.fr</code></td>
+              <td>Partout, machine éteinte</td>
+              <td class="yes">oui</td>
+              <td>VPS + domaine</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="note">
+        L'adresse IP locale est affichée par le script d'installation à la fin,
+        juste sous l'adresse <code>localhost</code>.
+      </p>
+
+      <h3 style="margin-top: 16px;">Accès hors de la maison, sans louer de serveur</h3>
+      <p>
+        <a href="https://tailscale.com/docs/features/tailscale-serve">Tailscale
+        Serve</a> place ta machine sur un réseau privé chiffré et lui attribue un
+        nom en <code>.ts.net</code> avec un vrai certificat — sans domaine à
+        acheter ni port à ouvrir sur ta box.
+      </p>
+      <div class="term">
+        <div class="term-bar">
+          <span class="term-name">Sur la machine qui héberge</span>
+          <button class="copy" type="button">Copier</button>
+        </div>
+        <pre><code><span class="c"># Après avoir installé Tailscale et connecté l'iPhone au même compte</span>
+<span class="p">$</span> tailscale serve 3000</code></pre>
+      </div>
+      <p class="note note--warn">
+        <strong>À vérifier avant de compter dessus :</strong> la documentation de
+        Tailscale ne précise pas si Serve est inclus dans le plan personnel
+        gratuit. Je ne l'ai pas testé — confirme-le sur leur page de tarifs.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= SERVEUR ================= -->
+  <section>
+    <div class="stack">
+      <div class="stack-tight">
+        <div class="eyebrow">Sur un serveur</div>
+        <h2>Déploiement permanent</h2>
+        <p>
+          C'est la seule voie où l'application répond tout le temps, depuis
+          n'importe quel téléphone, ordinateur éteint — et la seule où le
+          partage avec quelqu'un a du sens.
+        </p>
+      </div>
+
+      <h3 style="margin-top: 8px;">De quoi la machine a besoin</h3>
+      <p>
+        Mesuré sur ce code : la construction Next.js culmine à
+        <strong>environ 800&nbsp;Mo</strong> de mémoire. Il faut y ajouter
+        PostgreSQL et le système.
+      </p>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>RAM</th><th>Verdict</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>2 Go</td>
+              <td>Passe, sans marge. Activer du swap avant de construire, sinon
+                le build est tué en silence.</td>
+            </tr>
+            <tr>
+              <td><strong>4 Go</strong></td>
+              <td class="yes">Confortable. Le choix par défaut.</td>
+            </tr>
+            <tr><td>Plus</td><td>Inutile ici.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">
+        Un seul cœur suffit, 20 Go de disque aussi. Et il faut une offre
+        <strong>VPS</strong> ou serveur cloud : un « hébergement mutualisé » à
+        2 € ne fait tourner ni Docker ni PostgreSQL.
+      </p>
+
+      <h3 style="margin-top: 16px;">Combien ça coûte</h3>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Offre</th><th>Config</th><th>Prix indicatif</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Hetzner CAX11 (ARM) ou CX22</td>
+              <td>2 vCPU · 4 Go · 40 Go</td>
+              <td>≈ 4,50–5 € HT/mois</td>
+            </tr>
+            <tr>
+              <td>OVHcloud VPS Starter</td>
+              <td>1 vCore · 2 Go · 20 Go</td>
+              <td>≈ 3,50 € HT/mois</td>
+            </tr>
+            <tr>
+              <td>Scaleway DEV1-S</td>
+              <td>2 vCPU · 2 Go · 20 Go</td>
+              <td>≈ 8 € HT/mois</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note note--warn">
+        <strong>À vérifier avant de commander.</strong> Ces tarifs viennent de
+        comparatifs publics de septembre 2026, pas des sites des hébergeurs. Les
+        grilles bougent souvent — confirme le prix et la config sur la page de
+        l'hébergeur.
+      </p>
+      <p>
+        <strong>Le moins cher qui tienne vraiment : environ 5 à 6 € TTC par
+        mois</strong>, un serveur ARM à 4 Go plus un nom de domaine. L'image
+        Docker se construit sans rien changer sur ARM, et un Mac Apple Silicon
+        est déjà sur la même architecture. Le nom de domaine coûte une dizaine
+        d'euros par an — ou rien du tout avec un sous-domaine gratuit type
+        DuckDNS, qui fonctionne aussi avec Caddy et Let's Encrypt.
+      </p>
+
+      <h3 style="margin-top: 16px;">GitHub n'est pas un hébergement</h3>
+      <p>
+        À lever tout de suite, parce que c'est le malentendu qui coûte le plus
+        cher : <strong>mettre le code sur GitHub ne fait pas tourner
+        l'application.</strong> GitHub stocke du code. GitHub Pages sert des
+        fichiers statiques — or il y a ici un serveur Node et une base
+        PostgreSQL, donc Pages ne peut pas l'exécuter. Il faut une machine, dans
+        tous les cas.
+      </p>
+      <p>
+        Ce que le dépôt apporte, c'est le <strong>chemin de mise à jour</strong> :
+        au lieu d'envoyer une archive à chaque correction, le serveur fait un
+        <code>git pull</code>.
+      </p>
+      <div class="term">
+        <div class="term-bar">
+          <span class="term-name">Sur le serveur, les fois suivantes</span>
+          <button class="copy" type="button">Copier</button>
+        </div>
+        <pre><code><span class="p">$</span> ./scripts/deploy.sh</code></pre>
+      </div>
+      <p class="note">
+        Il récupère, reconstruit, redémarre, et attend que l'application
+        réponde. <code>.env</code> et la base ne sont jamais touchés : le code
+        change, les données et les secrets restent.
+      </p>
+
+      <h3 style="margin-top: 16px;">Et Railway, Render, Fly.io ?</h3>
+      <p>
+        Ces plateformes déploient directement depuis un dépôt : un
+        <code>git push</code> et l'application se met à jour. C'est confortable.
+        Deux objections, dans cet ordre.
+      </p>
+      <p class="note note--warn">
+        <strong>La première est le sujet même de ce projet.</strong> Les
+        opérations bancaires vivraient dans une base gérée par un tiers, sur une
+        infrastructure qu'on ne contrôle pas. Toute la conception ici part du
+        choix inverse. Ce n'est pas une question de confiance envers ces
+        sociétés, c'est une question de cohérence : si les données peuvent aller
+        chez un tiers, autant utiliser Bankin' ou Finary, qui font le travail
+        mieux et gratuitement.
+      </p>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Plateforme</th><th>Application seule</th><th>Offre gratuite</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Render</td><td>≈ 7 $/mois</td>
+              <td>Oui, mais le service s'endort après ~15 min</td>
+            </tr>
+            <tr>
+              <td>Fly.io</td><td>≈ 7 $/mois</td>
+              <td class="no">Non pour les comptes créés après oct. 2024</td>
+            </tr>
+            <tr>
+              <td>Railway</td><td>≈ 10–15 $/mois</td>
+              <td class="no">Non, un crédit d'essai</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">
+        Ces chiffres de septembre 2026 sont indicatifs et <strong>ne couvrent que
+        l'application</strong> : la base PostgreSQL gérée se facture en plus. On
+        arrive à 12–30 € par mois, soit deux à cinq fois le prix d'un VPS qui
+        fait tourner les deux. <strong>À vérifier</strong> sur leurs pages de
+        tarifs.
+      </p>
+      <p>
+        <strong>La bonne combinaison : dépôt GitHub pour le code et les mises à
+        jour, VPS pour l'exécution et les données.</strong> On garde le confort
+        du <code>git push</code> sans confier ses relevés à qui que ce soit.
+      </p>
+
+      <h3 style="margin-top: 16px;">Les trois commandes</h3>
+      <p>
+        Avant de commencer : créer un enregistrement DNS de type <strong>A</strong>
+        qui pointe le sous-domaine choisi vers l'IP du serveur.
+      </p>
+      <div class="term">
+        <div class="term-bar">
+          <span class="term-name">Sur le serveur, puis sur le Mac, puis sur le serveur</span>
+          <button class="copy" type="button">Copier</button>
+        </div>
+        <pre><code><span class="c"># 1. Sur le serveur neuf (Debian ou Ubuntu)</span>
+<span class="p">$</span> ssh root@&lt;ip-du-serveur&gt;
+<span class="p">$</span> curl -fsSL https://get.docker.com | sh
+
+<span class="c"># 2. Recuperer le projet — depuis le depot git...</span>
+<span class="p">$</span> git clone git@github.com:&lt;toi&gt;/patrimo.git &amp;&amp; cd patrimo
+
+<span class="c">#    ...ou, sans depot, en envoyant l'archive depuis le Mac :</span>
+<span class="c">#    scp patrimo.tar.gz root@&lt;ip&gt;:~  puis  tar xzf patrimo.tar.gz</span>
+
+<span class="c"># 3. Installer</span>
+<span class="p">$</span> rm -f docker-compose.override.yml
+<span class="p">$</span> ./scripts/setup.sh --vps</code></pre>
+      </div>
+
+      <p class="note note--warn">
+        <strong>Supprimer <code>docker-compose.override.yml</code></strong> n'est
+        pas cosmétique : ce fichier publie le port 3000 sur l'hôte, ce qui
+        exposerait l'application sans HTTPS à côté de Caddy.
+      </p>
+
+      <p>
+        Caddy obtient le certificat Let's Encrypt dans la minute. S'il n'arrive
+        pas, la cause est presque toujours le DNS pas encore propagé, ou le port
+        80 fermé. Les sauvegardes démarrent en même temps : une par jour dans
+        <code>./backups</code>, conservées trente jours.
+      </p>
+
+      <p class="note note--warn">
+        <strong>Deux choses à faire tout de suite, pas plus tard :</strong>
+        copier <code>ENCRYPTION_KEY</code> hors de la machine (gestionnaire de
+        mots de passe), et vérifier le lendemain que <code>ls backups/</code>
+        renvoie bien un fichier. Une sauvegarde qu'on n'a jamais vue tomber n'est
+        pas une sauvegarde.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= PARTAGE ================= -->
+  <section>
+    <div class="stack">
+      <div class="stack-tight">
+        <div class="eyebrow">À plusieurs</div>
+        <h2>Partager avec quelqu'un</h2>
+        <p>
+          Une installation, plusieurs personnes. Chacune a son profil, son code,
+          ses comptes — invisibles des autres. Ton ami n'installe rien : il ouvre
+          la même adresse depuis son téléphone, choisit son profil, saisit son
+          code. Ajouter l'icône à son écran d'accueil se fait exactement pareil.
+        </p>
+      </div>
+
+      <div class="term">
+        <div class="term-bar"><span class="term-name">Ajouter un profil</span></div>
+        <pre><code><span class="p">1.</span> Réglages  →  Profils  →  Ajouter un profil
+<span class="p">2.</span> Son prénom, le code <span class="c">qu'il choisit</span>, et <span class="c">ton</span> code pour confirmer
+<span class="p">3.</span> Il ouvre l'adresse, appuie sur sa pastille, saisit son code
+
+<span class="c">Son profil démarre vide, avec ses propres catégories.</span>
+<span class="c">Il ne verra jamais tes opérations, ni toi les siennes.</span></code></pre>
+      </div>
+
+      <p class="note note--warn">
+        <strong>Ce que « cloisonné » veut dire exactement.</strong> Les profils
+        séparent les données à l'intérieur de l'application. Mais toi, qui
+        administres le serveur, tu peux lire la base directement. C'est un
+        partage entre proches, pas un service anonyme — dis-le-lui clairement
+        avant qu'il y mette ses relevés.
+      </p>
+
+      <p class="note">
+        Pour que l'adresse soit joignable depuis son téléphone à lui, il faut
+        sortir du réseau local : Tailscale ne suffit pas s'il n'est pas sur ton
+        réseau. La voie « serveur + domaine » décrite plus haut est la seule qui
+        marche partout, pour tout le monde, tout le temps.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= GITHUB ================= -->
+  <section>
+    <div class="stack">
+      <div class="stack-tight">
+        <div class="eyebrow">Publier le code</div>
+        <h2>Mettre le projet sur GitHub</h2>
+        <p>
+          Le dépôt ne contient <strong>que du code</strong>. Les opérations
+          vivent dans PostgreSQL, les secrets dans <code>.env</code>, et ni l'un
+          ni l'autre n'est versionné. Publier le dépôt ne publie donc rien de
+          personnel — à condition de le vérifier une fois, avant.
+        </p>
+      </div>
+
+      <div class="term">
+        <div class="term-bar">
+          <span class="term-name">Avant de publier</span>
+          <button class="copy" type="button">Copier</button>
+        </div>
+        <pre><code><span class="p">$</span> ./scripts/check-before-push.sh</code></pre>
+      </div>
+
+      <p>
+        Le script regarde ce qui est <em>réellement</em> suivi par git et ce qui
+        est <em>réellement</em> dans l'historique — pas ce que le
+        <code>.gitignore</code> prétend. Aucun <code>.env</code>, aucun relevé,
+        aucune sauvegarde, aucune valeur de secret.
+      </p>
+
+      <p class="note note--warn">
+        <strong>Le piège qu'on découvre trop tard :</strong> retirer un fichier
+        du dépôt ne le retire pas de l'historique. Un <code>.env</code> commité
+        une seule fois reste lisible dans tous les commits suivants, même après
+        <code>git rm</code>. Si le script signale ce cas, le plus sûr n'est pas
+        de réécrire l'historique — c'est de repartir d'un dépôt neuf :
+        <code>rm -rf .git &amp;&amp; git init</code>. Et si un secret est parti
+        malgré tout : le considérer comme compromis et le régénérer. Supprimer
+        le dépôt ne suffit pas.
+      </p>
+
+      <h3 style="margin-top: 16px;">Deux façons de partager, à ne pas confondre</h3>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Même serveur, deux profils</th>
+              <th>Dépôt GitHub, deux installations</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Ce qui est partagé</td>
+              <td>Le serveur et sa base</td>
+              <td>Le code seulement</td>
+            </tr>
+            <tr>
+              <td>Où vivent ses données</td>
+              <td>Chez toi</td>
+              <td>Chez lui</td>
+            </tr>
+            <tr>
+              <td>Peux-tu lire ses données</td>
+              <td class="no">Oui, via la base</td>
+              <td class="yes">Non, jamais</td>
+            </tr>
+            <tr>
+              <td>Ce qu'il installe</td>
+              <td>Rien, il ouvre une URL</td>
+              <td>Docker, et son instance</td>
+            </tr>
+            <tr>
+              <td>Qui paye le serveur</td>
+              <td>Toi</td>
+              <td>Chacun le sien, ou personne</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="note">
+        <strong>Si ton ami sait lancer Docker, la voie GitHub est meilleure.</strong>
+        Elle supprime la seule vraie réserve du partage par profil — que
+        l'administrateur du serveur puisse lire la base — et t'évite d'être
+        responsable des données financières de quelqu'un d'autre. Garde le
+        partage par profil pour quelqu'un qui ne veut rien administrer.
+      </p>
+
+      <p class="note">
+        <strong>Sans fichier <code>LICENSE</code>, un dépôt public reste « tous
+        droits réservés »</strong> : le code est visible, mais personne n'a le
+        droit de s'en servir. Si l'intention est qu'on puisse l'utiliser,
+        ajouter une licence MIT est une ligne de plus.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= AU QUOTIDIEN ================= -->
+  <section>
+    <div class="stack">
+      <div class="stack-tight">
+        <div class="eyebrow">Ensuite</div>
+        <h2>Le rythme réel</h2>
+      </div>
+
+      <div class="stack">
+        <div>
+          <h3>Une fois par mois — trois minutes</h3>
+          <p>
+            Exporter le relevé, l'importer, puis passer sur <em>Opérations</em> →
+            filtre <em>Non catégorisées</em> et classer ce qui reste. Chaque
+            correction crée une règle : au troisième mois, il ne reste presque
+            rien à faire. Saisir aussi les valorisations patrimoniales — écran
+            <em>Patrimoine</em> → <em>Mettre à jour à la main</em> —, trente
+            secondes par source.
+          </p>
+        </div>
+        <div>
+          <h3>Au quotidien — dix secondes</h3>
+          <p>
+            L'accueil répond à une seule question : est-ce que je peux dépenser
+            ça. Solde projeté de fin de mois, dépenses en cours, alertes.
+          </p>
+        </div>
+        <div>
+          <h3>Le choix du mode budgétaire</h3>
+          <p>
+            Commencer en <strong>Suivi</strong>. Après deux mois d'historique, le
+            bouton « Proposer des budgets » calcule la médiane de tes dépenses
+            réelles plutôt que de te faire deviner. Ne passer en
+            <strong>Enveloppes</strong> que pour la discipline base zéro : c'est
+            un engagement quotidien, pas un réglage. La bascule est réversible
+            sans rien perdre.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= DEPANNAGE ================= -->
+  <section>
+    <div class="stack">
+      <div class="stack-tight">
+        <div class="eyebrow">Quand ça coince</div>
+        <h2>Dépannage</h2>
+      </div>
+
+      <div>
+        <details>
+          <summary>« Cannot connect to the Docker daemon »</summary>
+          <div class="answer">
+            <p>
+              Docker est installé mais l'application n'est pas lancée. Ouvre
+              Docker Desktop et attends que l'icône de baleine se stabilise dans
+              la barre de menus, puis relance le script.
+            </p>
+          </div>
+        </details>
+
+        <details>
+          <summary>Le script s'arrête sur « n'a pas répondu dans le délai imparti »</summary>
+          <div class="answer">
+            <p>
+              La construction a réussi mais l'application ne démarre pas. Les
+              journaux disent pourquoi :
+            </p>
+            <div class="term">
+              <div class="term-bar">
+                <span class="term-name">Terminal</span>
+                <button class="copy" type="button">Copier</button>
+              </div>
+              <pre><code><span class="p">$</span> docker compose logs -f app</code></pre>
+            </div>
+            <p>
+              La cause la plus fréquente : le port 3000 est déjà pris par autre
+              chose. Changer <code>'3000:3000'</code> en
+              <code>'3001:3000'</code> dans
+              <code>docker-compose.override.yml</code>, puis relancer.
+            </p>
+          </div>
+        </details>
+
+        <details>
+          <summary>L'import est refusé : « aucune colonne de libellé reconnue »</summary>
+          <div class="answer">
+            <p>
+              Le format de ta banque n'est pas encore reconnu. L'écran d'import
+              affiche les colonnes trouvées dans ton fichier — il suffit de les
+              ajouter au profil correspondant dans
+              <code>src/server/import/csv.ts</code>, une dizaine de lignes.
+            </p>
+            <p>
+              Seul le profil <strong>BoursoBank</strong> a été confronté à un
+              vrai export. Les autres viennent de formats publiquement
+              documentés et peuvent demander cet ajustement.
+            </p>
+          </div>
+        </details>
+
+        <details>
+          <summary>L'app s'ouvre dans Safari avec la barre d'adresse</summary>
+          <div class="answer">
+            <p>
+              Une ancienne version du manifeste est en cache. Retire l'icône de
+              l'écran d'accueil, recharge la page dans Safari en maintenant le
+              bouton de rechargement, puis réinstalle.
+            </p>
+          </div>
+        </details>
+
+        <details>
+          <summary>Un profil a oublié son code</summary>
+          <div class="answer">
+            <p>
+              Si c'est celui de quelqu'un d'autre :
+              <em>Réglages → Profils</em> depuis le profil propriétaire, qui peut
+              réinitialiser le code des autres. Les données sont conservées.
+            </p>
+            <p>
+              Si c'est <strong>le code du propriétaire</strong>, il faut passer
+              par la base, depuis la machine qui héberge. La commande ci-dessous
+              supprime tous les profils <strong>et toutes leurs données</strong> :
+            </p>
+            <div class="term">
+              <div class="term-bar">
+                <span class="term-name">Terminal</span>
+                <button class="copy" type="button">Copier</button>
+              </div>
+              <pre><code><span class="p">$</span> docker compose exec db psql -U patrimo -d patrimo \
+    -c 'DELETE FROM "Profile";'</code></pre>
+            </div>
+            <p class="note note--warn">
+              <strong>C'est irréversible.</strong> Les opérations, budgets et
+              valorisations partent avec. Si l'historique compte, restaurer
+              d'abord une sauvegarde de <code>./backups</code>.
+            </p>
+          </div>
+        </details>
+
+        <details>
+          <summary>Comment mettre à jour sans perdre mes données</summary>
+          <div class="answer">
+            <p>
+              Extraire la nouvelle version par-dessus l'ancienne, puis
+              reconstruire. <code>.env</code> et la base de données ne sont pas
+              touchés ; les migrations s'appliquent au démarrage.
+            </p>
+            <div class="term">
+              <div class="term-bar">
+                <span class="term-name">Terminal</span>
+                <button class="copy" type="button">Copier</button>
+              </div>
+              <pre><code><span class="p">$</span> docker compose up -d --build</code></pre>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>
+      Le <code>README.md</code> du projet couvre l'architecture, le
+      cloisonnement des profils, les connecteurs Trade Republic et Yomoni, et
+      les limites assumées de chacun.
+      <br>
+      Sauvegarde <code>ENCRYPTION_KEY</code> ailleurs que sur la machine : la
+      changer rend illisible tout ce qui a déjà été chiffré.
+    </p>
+  </footer>
+
+</div>
+
+<script>
+  // --- Bascule macOS / Windows ------------------------------------------
+  // Les deux jeux de commandes coexistent dans le document ; on masque celui
+  // qui ne correspond pas. Tout reste lisible sans JavaScript : par defaut,
+  // seul le bloc Windows porte l'attribut `hidden`.
+  (function () {
+    var tabs = document.querySelectorAll('.tab');
+    var panels = document.getElementById('os-panels');
+
+    function select(os) {
+      tabs.forEach(function (tab) {
+        tab.setAttribute('aria-selected', String(tab.dataset.os === os));
+      });
+      panels.querySelectorAll('[data-os]').forEach(function (el) {
+        el.hidden = el.dataset.os !== os;
+      });
+      try { localStorage.setItem('patrimo-os', os); } catch (e) { /* navigation privee */ }
+    }
+
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () { select(tab.dataset.os); });
+    });
+
+    var saved = null;
+    try { saved = localStorage.getItem('patrimo-os'); } catch (e) { /* idem */ }
+    // A defaut, on detecte le systeme ; en dernier recours, macOS.
+    if (!saved) {
+      saved = /Win/i.test(navigator.platform || navigator.userAgent) ? 'win' : 'mac';
+    }
+    select(saved);
+  })();
+
+  // --- Copie des commandes ----------------------------------------------
+  // On retire les invites ($ et >) : elles se voient a l'ecran mais n'ont
+  // rien a faire dans le presse-papiers.
+  document.querySelectorAll('.copy').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var block = button.closest('.term').querySelector('pre');
+      var clone = block.cloneNode(true);
+      clone.querySelectorAll('.p, .c').forEach(function (el) { el.remove(); });
+      var text = clone.textContent
+        .split('\n')
+        .map(function (line) { return line.trim(); })
+        .filter(function (line) { return line !== ''; })
+        .join('\n');
+
+      var done = function () {
+        var previous = button.textContent;
+        button.textContent = 'Copié';
+        setTimeout(function () { button.textContent = previous; }, 1400);
+      };
+      var failed = function () {
+        button.textContent = 'Sélectionne et copie';
+        setTimeout(function () { button.textContent = 'Copier'; }, 2200);
+      };
+
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(done, failed);
+      } else {
+        failed();
+      }
+    });
+  });
+</script>

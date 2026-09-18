@@ -109,7 +109,12 @@ export interface Schedule {
   valences: ValenceSpec[]
 }
 
-export type DoseState = 'done' | 'due' | 'late' | 'upcoming' | 'not-applicable'
+/**
+ * Un carnet ne juge pas. Une dose est inscrite, ou elle ne l'est pas.
+ * Aucun etat « en retard » ni « a faire » n'est calcule pour un enfant :
+ * cette lecture appartient au medecin qui le suit.
+ */
+export type DoseState = 'done' | 'not-recorded'
 
 export interface DoseStatus {
   valenceCode: string
@@ -119,16 +124,8 @@ export interface DoseStatus {
   doseNumber: number
   doseLabel: string
   state: DoseState
-  /** Date au plus tôt à laquelle la dose peut être administrée. */
-  earliestDate: ISODate
-  /** Date cible issue du calendrier. */
-  targetDate: ISODate
-  /** Date au-delà de laquelle la fenêtre est dépassée. */
-  latestDate: ISODate
-  /** Jours écoulés depuis la date cible, quand elle est dépassée. */
-  daysSinceTarget?: number
-  /** Jours écoulés depuis la fin de la fenêtre, quand elle est dépassée. */
-  daysLate?: number
+  /** Age prevu par le calendrier officiel, en mois. Jamais une date calculee. */
+  targetAgeMonths: number
   administeredOn?: ISODate
   verified?: boolean
   eventId?: string
@@ -141,6 +138,19 @@ export interface ValenceStatus {
   mandatory: boolean
   doses: DoseStatus[]
   complete: boolean
-  hasLate: boolean
   hasUnverified: boolean
+}
+
+/**
+ * Un rappel cree par le parent : il choisit la date et ecrit le libelle.
+ * L'application ne derive jamais un rappel du calendrier vaccinal.
+ */
+export interface ParentReminder {
+  id: string
+  childId: string
+  label: string
+  date: ISODate
+  note?: string
+  createdAt: string
+  deletedAt?: string
 }

@@ -3,8 +3,8 @@ import scheduleData from './data/schedules/fr-2025.json'
 import type { Child, Schedule } from './domain/types'
 import type { DoseGroup } from './domain/status'
 import {
-  type LockState, enableEncryption, lock, lockState as readLockState, mutate, newId,
-  readVault, stamp, unlock, wipeAll,
+  type LockState, enableEncryption, listReminders, lock, lockState as readLockState, mutate,
+  newId, readVault, stamp, unlock, wipeAll,
 } from './storage/repository'
 import { Onboarding } from './ui/Onboarding'
 import { Status } from './ui/Status'
@@ -16,7 +16,6 @@ import { ExplainProvider } from './ui/Explain'
 import { SetupEncryption, Unlock } from './ui/Vault'
 import type { DoseEntryValue } from './ui/DoseEntry'
 import type { GrowthMeasure, VaccinationEvent } from './domain/types'
-import { computeStatus, upcomingDoses } from './domain/status'
 import { today } from './domain/dates'
 import { syncReminders } from './native/reminders'
 import { maybeRequestReview } from './native/review'
@@ -27,6 +26,8 @@ const schedule = scheduleData as Schedule
 
 export default function App() {
   const [ready, setReady] = useState(false)
+  // Incrémenté quand le parent ajoute ou retire un rappel.
+  const [reminderVersion, setReminderVersion] = useState(0)
   const [state, setState] = useState<LockState>('plain')
   const [allChildren, setAllChildren] = useState<Child[]>([])
   const [child, setChild] = useState<Child | null>(null)
@@ -64,14 +65,16 @@ export default function App() {
 
   useEffect(() => { void load() }, [load])
 
-  // Reprogrammé à chaque changement de données : nouvelle dose enregistrée,
-  // rendez-vous marqué fait, enfant fusionné depuis l'autre parent. Sans
-  // effet hors de l'app iOS — voir native/reminders.ts.
+  // Reprogrammé quand les rappels du parent changent. L'application ne crée
+  // jamais de rappel d'elle-même : voir native/reminderPlan.ts.
   useEffect(() => {
     if (!child) return
-    const statuses = computeStatus(schedule, child.birthDate, events, today())
-    void syncReminders(upcomingDoses(statuses, today(), 366), today())
-  }, [child, events])
+    let cancelled = false
+    void listReminders(child.id).then((rs) => {
+      if (!cancelled) void syncReminders(rs, today())
+    })
+    return () => { cancelled = true }
+  }, [child, reminderVersion])
 
   if (!ready) return null
 
@@ -165,7 +168,7 @@ export default function App() {
       {/* Réserve la hauteur de la barre fixe : aucun contenu ne passe dessous. */}
       <div className="flex flex-1 flex-col pb-[76px]">
         {tab === 'status' && (
-          <Status child={child} schedule={schedule} events={events} onRecord={record} />
+          <Status onRemindersChange={() => setReminderVersion((n) => n + 1)} child={child} schedule={schedule} events={events} onRecord={record} />
         )}
         {tab === 'photos' && (
           <Record child={child} schedule={schedule} events={events} onChange={load} />

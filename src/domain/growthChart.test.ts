@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   MAX_AGE_DAYS,
   plotMeasures,
-  positionLabel,
   referenceCurve,
   valueOf,
 } from './growthChart'
@@ -62,32 +61,6 @@ describe('courbes de référence', () => {
 describe('placement des mesures', () => {
   const birth = '2024-01-01'
 
-  it('place la médiane à z = 0 et au 50ᵉ centile', () => {
-    const median = referenceCurve('weight', 'F', 0, 365, 365)[1].value
-    const { points } = plotMeasures(
-      [measure({ date: '2024-12-31', weightKg: median })],
-      birth,
-      'weight',
-      'F',
-    )
-    expect(points).toHaveLength(1)
-    expect(points[0].ageDays).toBe(365)
-    expect(points[0].zScore).toBeCloseTo(0, 3)
-    expect(points[0].percentile).toBeCloseTo(50, 1)
-  })
-
-  it('retrouve un écart-type non nul par dichotomie', () => {
-    const at1 = referenceCurve('weight', 'M', 1, 365, 365)[1].value
-    const { points } = plotMeasures(
-      [measure({ date: '2024-12-31', weightKg: at1 })],
-      birth,
-      'weight',
-      'M',
-    )
-    expect(points[0].zScore).toBeCloseTo(1, 2)
-    expect(points[0].percentile).toBeCloseTo(84.13, 0)
-  })
-
   it('trie par âge, quel que soit l’ordre de saisie', () => {
     const { points } = plotMeasures(
       [
@@ -97,7 +70,6 @@ describe('placement des mesures', () => {
       ],
       birth,
       'weight',
-      'F',
     )
     expect(points.map((p) => p.date)).toEqual(['2024-02-01', '2024-04-01', '2024-07-01'])
   })
@@ -111,7 +83,6 @@ describe('placement des mesures', () => {
       ],
       birth,
       'weight',
-      'F',
     )
     expect(points).toHaveLength(1)
     expect(points[0].date).toBe('2024-03-03')
@@ -126,7 +97,6 @@ describe('placement des mesures', () => {
       ],
       birth,
       'weight',
-      'F',
     )
     expect(points).toHaveLength(1)
     expect(outOfRange).toBe(1)
@@ -137,7 +107,6 @@ describe('placement des mesures', () => {
       [measure({ date: '2023-12-25', weightKg: 3.2 })],
       birth,
       'weight',
-      'F',
     )
     expect(points).toHaveLength(0)
     expect(outOfRange).toBe(1)
@@ -148,7 +117,6 @@ describe('placement des mesures', () => {
       [measure({ date: '2024-03-01', weightKg: 5.9, verifiedByUser: false })],
       birth,
       'weight',
-      'F',
     )
     expect(points[0].verified).toBe(false)
   })
@@ -161,11 +129,3 @@ describe('placement des mesures', () => {
   })
 })
 
-describe('formulation de la position', () => {
-  it('reste descriptive, sans jugement', () => {
-    expect(positionLabel(50)).toBe('50ᵉ centile')
-    expect(positionLabel(0.4)).toBe('sous le 1ᵉʳ centile')
-    expect(positionLabel(99.6)).toBe('au-dessus du 99ᵉ centile')
-    expect(positionLabel(3.4)).toBe('3ᵉ centile')
-  })
-})

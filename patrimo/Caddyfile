@@ -1,0 +1,35 @@
+# Caddy obtient et renouvelle seul le certificat Let's Encrypt.
+#
+# Le HTTPS n'est pas un detail de confort ici : sans origine securisee, iOS
+# refuse d'enregistrer le service worker, et la PWA ne s'installe pas.
+
+{$APP_DOMAIN} {
+	encode zstd gzip
+
+	# HSTS : une fois le domaine en HTTPS, on n'y revient pas.
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+		-Server
+	}
+
+	# Le service worker ne doit jamais etre servi depuis un cache : sinon une
+	# ancienne version reste active sur le telephone apres un deploiement.
+	@sw path /sw.js
+	header @sw Cache-Control "no-cache, no-store, must-revalidate"
+
+	# Les fichiers versionnes de Next sont immuables.
+	@static path /_next/static/*
+	header @static Cache-Control "public, max-age=31536000, immutable"
+
+	reverse_proxy app:3000
+
+	log {
+		output file /data/access.log {
+			roll_size 10MB
+			roll_keep 5
+		}
+	}
+}

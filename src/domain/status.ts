@@ -1,11 +1,19 @@
-import {
-  addDays, addMonths, ageInMonths, compare, daysBetween, type ISODate,
-} from './dates'
+import { ageInMonths, compare, type ISODate } from './dates'
 import type {
   DoseStatus, Schedule, ValenceSpec, ValenceStatus, VaccinationEvent,
 } from './types'
 
-/** Une valence s'applique-t-elle à un enfant né à cette date, et est-elle obligatoire ? */
+/**
+ * Lecture du carnet.
+ *
+ * Ce module restitue deux choses et rien de plus : le calendrier vaccinal
+ * officiel tel qu'il est publie, et ce que le parent a inscrit. Il ne calcule
+ * aucun retard, aucune date a venir, aucune recommandation pour un enfant
+ * donne. Le carnet papier ne le fait pas davantage ; l'interpretation revient
+ * au medecin qui suit l'enfant.
+ */
+
+/** Une valence s'applique-t-elle a un enfant ne a cette date, et est-elle obligatoire ? */
 export function resolveValence(
   v: ValenceSpec,
   birthDate: ISODate,
@@ -17,18 +25,16 @@ export function resolveValence(
     compare(birthDate, from) >= 0 &&
     (until === undefined || compare(birthDate, until) <= 0)
 
-  // Une valence remplacée (méningo C) ne s'applique plus aux cohortes postérieures.
+  // Une valence remplacee (meningo C) ne s'applique plus aux cohortes posterieures.
   if (v.supersededBy && until !== undefined && compare(birthDate, until) > 0) {
     return { applicable: false, mandatory: false }
   }
-  // Une obligation qui n'a pas encore commencé pour cette cohorte et qui n'est
-  // pas recommandée par ailleurs ne s'applique pas.
   if (!mandatory && !v.recommended) return { applicable: false, mandatory: false }
 
   return { applicable: true, mandatory }
 }
 
-/** Les événements d'une valence, non supprimés, du plus ancien au plus récent. */
+/** Les evenements d'une valence, non supprimes, du plus ancien au plus recent. */
 function administeredFor(code: string, events: VaccinationEvent[]): VaccinationEvent[] {
   return events
     .filter((e) => !e.deletedAt && e.valences.includes(code))
@@ -37,9 +43,8 @@ function administeredFor(code: string, events: VaccinationEvent[]): VaccinationE
 
 export function computeValenceStatus(
   v: ValenceSpec,
-  birthDate: ISODate,
+  _birthDate: ISODate,
   events: VaccinationEvent[],
-  today: ISODate,
   mandatory: boolean,
 ): ValenceStatus {
   const given = administeredFor(v.code, events)
@@ -47,16 +52,6 @@ export function computeValenceStatus(
 
   for (const spec of v.doses) {
     const event = given[spec.n - 1]
-    const target = addMonths(birthDate, spec.targetAgeMonths)
-    const latest = addMonths(birthDate, spec.maxAgeMonths)
-
-    let earliest = addMonths(birthDate, spec.minAgeMonths)
-    const previous = given[spec.n - 2]
-    if (spec.minIntervalDays !== undefined && previous) {
-      const afterInterval = addDays(previous.date, spec.minIntervalDays)
-      if (compare(afterInterval, earliest) > 0) earliest = afterInterval
-    }
-
     const base = {
       valenceCode: v.code,
       valenceLabel: v.label,
@@ -64,31 +59,20 @@ export function computeValenceStatus(
       mandatory,
       doseNumber: spec.n,
       doseLabel: spec.label,
-      earliestDate: earliest,
-      targetDate: target,
-      latestDate: latest,
+      targetAgeMonths: spec.targetAgeMonths,
     }
 
-    if (event) {
-      doses.push({
-        ...base,
-        state: 'done',
-        administeredOn: event.date,
-        verified: event.verifiedByUser,
-        eventId: event.id,
-      })
-    } else if (compare(today, latest) > 0) {
-      // Fenêtre dépassée : en retard si obligatoire, sans objet si recommandé.
-      doses.push({
-        ...base,
-        state: mandatory ? 'late' : 'not-applicable',
-        daysLate: mandatory ? daysBetween(latest, today) : undefined,
-      })
-    } else if (compare(today, target) >= 0) {
-      doses.push({ ...base, state: 'due', daysSinceTarget: daysBetween(target, today) })
-    } else {
-      doses.push({ ...base, state: 'upcoming' })
-    }
+    doses.push(
+      event
+        ? {
+            ...base,
+            state: 'done',
+            administeredOn: event.date,
+            verified: event.verifiedByUser,
+            eventId: event.id,
+          }
+        : { ...base, state: 'not-recorded' },
+    )
   }
 
   return {
@@ -97,8 +81,7 @@ export function computeValenceStatus(
     shortLabel: v.shortLabel,
     mandatory,
     doses,
-    complete: doses.every((d) => d.state === 'done' || d.state === 'not-applicable'),
-    hasLate: doses.some((d) => d.state === 'late'),
+    complete: doses.every((d) => d.state === 'done'),
     hasUnverified: doses.some((d) => d.state === 'done' && d.verified === false),
   }
 }
@@ -107,43 +90,26 @@ export function computeStatus(
   schedule: Schedule,
   birthDate: ISODate,
   events: VaccinationEvent[],
-  today: ISODate,
 ): ValenceStatus[] {
   const out: ValenceStatus[] = []
   for (const v of schedule.valences) {
     const { applicable, mandatory } = resolveValence(v, birthDate)
     if (!applicable) continue
-    out.push(computeValenceStatus(v, birthDate, events, today, mandatory))
+    out.push(computeValenceStatus(v, birthDate, events, mandatory))
   }
   return out
 }
 
 export interface StatusSummary {
   ageMonths: number
-  lateCount: number
-  dueSoonCount: number
-  upToDateCount: number
+  /** Doses inscrites au carnet. */
+  recordedCount: number
+  /** Lignes du calendrier officiel sans inscription correspondante. */
+  notRecordedCount: number
+  /** Doses inscrites depuis une photo, que le parent n'a pas encore relues. */
   unverifiedCount: number
   mandatoryTotal: number
-  mandatorySatisfied: number
-}
-
-/** Doses dues ou en retard, plus celles à venir dans `horizonDays`. */
-export function upcomingDoses(
-  statuses: ValenceStatus[],
-  today: ISODate,
-  horizonDays = 92,
-): DoseStatus[] {
-  const horizon = addDays(today, horizonDays)
-  return statuses
-    .flatMap((v) => v.doses)
-    .filter(
-      (d) =>
-        d.state === 'late' ||
-        d.state === 'due' ||
-        (d.state === 'upcoming' && compare(d.targetDate, horizon) <= 0),
-    )
-    .sort((a, b) => compare(a.targetDate, b.targetDate))
+  mandatoryComplete: number
 }
 
 export function summarise(
@@ -155,60 +121,47 @@ export function summarise(
   const mandatory = statuses.filter((v) => v.mandatory)
   return {
     ageMonths: ageInMonths(birthDate, today),
-    lateCount: doses.filter((d) => d.state === 'late').length,
-    dueSoonCount: upcomingDoses(statuses, today).filter((d) => d.state !== 'late').length,
-    upToDateCount: statuses.filter((v) => v.complete).length,
+    recordedCount: doses.filter((d) => d.state === 'done').length,
+    notRecordedCount: doses.filter((d) => d.state === 'not-recorded').length,
     unverifiedCount: doses.filter((d) => d.state === 'done' && d.verified === false).length,
     mandatoryTotal: mandatory.length,
-    mandatorySatisfied: mandatory.filter((v) => !v.hasLate).length,
+    mandatoryComplete: mandatory.filter((v) => v.complete).length,
   }
 }
 
 export interface DoseGroup {
-  /** Clé stable : date cible commune. */
-  key: ISODate
+  /** Cle stable : l'age prevu par le calendrier, en mois. */
+  key: number
   label: string
-  targetDate: ISODate
-  state: 'late' | 'due' | 'upcoming'
+  targetAgeMonths: number
   doses: DoseStatus[]
-  daysLate?: number
-  daysSinceTarget?: number
+  /** Toutes les doses de ce rendez-vous sont inscrites. */
+  complete: boolean
 }
 
-const SEVERITY = { late: 3, due: 2, upcoming: 1 } as const
-
 /**
- * Regroupe les doses par rendez-vous. Dans la réalité une injection couvre
- * plusieurs valences (un hexavalent en couvre six) : présenter une carte par
- * valence produit un mur illisible et ne correspond à aucun geste réel.
+ * Regroupe les doses par rendez-vous du calendrier officiel, c'est-a-dire par
+ * age — « 2 mois », « 5 mois », « 11 mois ». C'est la presentation du carnet
+ * papier, et c'est aussi la realite du geste : une injection couvre plusieurs
+ * valences, un hexavalent en couvre six.
  */
 export function groupByVisit(doses: DoseStatus[]): DoseGroup[] {
-  const byDate = new Map<ISODate, DoseStatus[]>()
+  const byAge = new Map<number, DoseStatus[]>()
   for (const d of doses) {
-    if (d.state !== 'late' && d.state !== 'due' && d.state !== 'upcoming') continue
-    const list = byDate.get(d.targetDate)
+    const list = byAge.get(d.targetAgeMonths)
     if (list) list.push(d)
-    else byDate.set(d.targetDate, [d])
+    else byAge.set(d.targetAgeMonths, [d])
   }
 
   const groups: DoseGroup[] = []
-  for (const [targetDate, list] of byDate) {
-    let state: 'late' | 'due' | 'upcoming' = 'upcoming'
-    for (const d of list) {
-      const s = d.state as 'late' | 'due' | 'upcoming'
-      if (SEVERITY[s] > SEVERITY[state]) state = s
-    }
-    const reference = list.find((d) => d.state === state)!
+  for (const [targetAgeMonths, list] of byAge) {
     groups.push({
-      key: targetDate,
-      // Les doses d'un même rendez-vous partagent leur libellé d'âge.
-      label: reference.doseLabel,
-      targetDate,
-      state,
+      key: targetAgeMonths,
+      label: list[0].doseLabel,
+      targetAgeMonths,
       doses: [...list].sort((a, b) => a.shortLabel.localeCompare(b.shortLabel, 'fr')),
-      daysLate: reference.daysLate,
-      daysSinceTarget: reference.daysSinceTarget,
+      complete: list.every((d) => d.state === 'done'),
     })
   }
-  return groups.sort((a, b) => compare(a.targetDate, b.targetDate))
+  return groups.sort((a, b) => a.targetAgeMonths - b.targetAgeMonths)
 }

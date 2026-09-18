@@ -1,47 +1,49 @@
 import { useMemo, useState } from 'react'
-import { addMonths, today as todayFn } from '../domain/dates'
-import { computeStatus, groupByVisit, summarise, upcomingDoses } from '../domain/status'
-import { catchUpPlans, type CatchUpPlan } from '../domain/catchup'
+import { today as todayFn } from '../domain/dates'
+import { computeStatus, groupByVisit, summarise } from '../domain/status'
+import { catchUpReferences, type CatchUpReference } from '../domain/catchup'
 import type { DoseGroup } from '../domain/status'
 import type { Explanation } from './Explain'
 import type { Child, Schedule, VaccinationEvent } from '../domain/types'
 import { IconCheck, LegalNotice, StatusPill } from './atoms'
 import { Emergency } from './Emergency'
+import { Reminders } from './Reminders'
 import { DoseEntry, type DoseEntryValue } from './DoseEntry'
 import { frDate as humanDate, humanAge } from './format'
 import { Explainable } from './Explain'
 import { buildValenceIndex, progressExplanation } from './explanations'
 
 
-export function Status({ child, schedule, events, onRecord }: {
+export function Status({ child, schedule, events, onRecord, onRemindersChange }: {
   child: Child
   schedule: Schedule
   events: VaccinationEvent[]
   onRecord: (group: DoseGroup, value: DoseEntryValue) => void
+  onRemindersChange: () => void
 }) {
   const [emergency, setEmergency] = useState(false)
   const today = todayFn()
   const [entry, setEntry] = useState<DoseGroup | null>(null)
   const explanations = useMemo(() => buildValenceIndex(schedule), [schedule])
 
-  const { summary, soon, catchUp } = useMemo(() => {
-    const statuses = computeStatus(schedule, child.birthDate, events, today)
+  const { summary, visits } = useMemo(() => {
+    const statuses = computeStatus(schedule, child.birthDate, events)
     return {
-      statuses,
       summary: summarise(statuses, child.birthDate, today),
-      soon: groupByVisit(upcomingDoses(statuses, today)),
-      catchUp: catchUpPlans(schedule, child.birthDate, today, events),
+      visits: groupByVisit(statuses.flatMap((v) => v.doses)),
     }
   }, [schedule, child.birthDate, events, today])
+
+  // Le tableau de rattrapage ne dépend pas de l'enfant : c'est le référentiel
+  // publié, affiché tel quel. Voir domain/catchup.ts.
+  const catchUp = useMemo(() => catchUpReferences(schedule), [schedule])
 
   // On compte les injections non vérifiées, pas les valences : une seule
   // injection en couvre jusqu'à six, et afficher « 21 » pour 12 lignes ment.
   const unverifiedEvents = events.filter((e) => !e.deletedAt && !e.verifiedByUser).length
 
-  const late = soon.filter((g) => g.state === 'late')
-  const due = soon.filter((g) => g.state === 'due')
-  const upcoming = soon.filter((g) => g.state === 'upcoming')
-  const horizon = humanDate(addMonths(today, 3))
+  const open = visits.filter((g) => !g.complete)
+  const recorded = visits.filter((g) => g.complete)
 
   return (
     <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col">
@@ -72,37 +74,41 @@ export function Status({ child, schedule, events, onRecord }: {
 
       <main className="flex flex-1 flex-col gap-5 px-5 pb-6">
         <h1 className="font-display m-0 text-[30px] leading-[1.14] font-normal tracking-tight text-pretty">
-          {late.length > 0 && <span className="text-late font-medium">{late.length} rendez&#8209;vous en retard</span>}
-          {late.length > 0 && (due.length + upcoming.length > 0) && <br />}
-          {due.length + upcoming.length > 0 && (
-            <span>{late.length > 0 ? 'et ' : ''}{due.length + upcoming.length} à prévoir d'ici {horizon}.</span>
-          )}
-          {soon.length === 0 && <span>Rien à prévoir dans les trois prochains mois.</span>}
+          {open.length > 0
+            ? <span><span className="font-medium">{open.length} rendez&#8209;vous</span> du calendrier ne sont pas encore inscrits au carnet.</span>
+            : <span>Toutes les lignes du calendrier sont inscrites au carnet.</span>}
         </h1>
 
         <Progress
-          satisfied={summary.mandatorySatisfied}
+          satisfied={summary.mandatoryComplete}
           total={summary.mandatoryTotal}
           unverified={unverifiedEvents}
           birthDate={child.birthDate}
         />
 
-        <VisitSection title="En retard" groups={late} onPick={setEntry} explanations={explanations} />
-        <VisitSection title="À faire maintenant" groups={due} onPick={setEntry} explanations={explanations} />
-        <VisitSection title="Dans les 3 mois" groups={upcoming} onPick={setEntry} explanations={explanations} />
+        <VisitSection title="Non inscrits au carnet" groups={open} onPick={setEntry} explanations={explanations} />
+        <VisitSection title="Inscrits" groups={recorded} onPick={setEntry} explanations={explanations} />
+
+        <Reminders childId={child.id} onChange={onRemindersChange} />
 
         {catchUp.length > 0 && (
           <section className="flex flex-col gap-2.5">
             <h2 className="text-ink-muted m-0 text-[11px] font-bold tracking-[0.09em] uppercase">
-              Rattrapage
+              Rattrapage — tableau officiel
             </h2>
-            {catchUp.map((plan) => <CatchUpCard key={plan.valenceCode} plan={plan} />)}
+            <p className="text-ink-muted m-0 text-[12px] leading-snug text-pretty">
+              Le calendrier publie un schéma différent selon l'âge auquel le rattrapage commence.
+              Voici le tableau tel qu'il est publié. Votre médecin détermine celui qui s'applique
+              à votre enfant.
+            </p>
+            {catchUp.map((ref) => <CatchUpCard key={ref.valenceCode} reference={ref} />)}
           </section>
         )}
 
-
-        <p className="text-ink-faint m-0 text-[11.5px]">
-          Calendrier {schedule.id} · source vérifiée le {humanDate(schedule.checkedAt)}
+        <p className="text-ink-faint m-0 text-[11.5px] leading-snug text-pretty">
+          Calendrier vaccinal officiel — {schedule.source}, {schedule.id} ·
+          source vérifiée le {humanDate(schedule.checkedAt)}.
+          Votre médecin adapte ce calendrier à votre enfant.
         </p>
       </main>
 
@@ -118,8 +124,8 @@ export function Status({ child, schedule, events, onRecord }: {
 
 /**
  * La première question d'un parent n'est pas « qu'est-ce qui est en retard »
- * mais « est-ce qu'on est à jour ». Cet indicateur y répond d'un coup d'œil,
- * sans se substituer au détail.
+ * mais « qu'est-ce qui manque au carnet ». Cet indicateur y répond d'un coup
+ * d'œil. Il décrit le carnet, jamais l'état vaccinal de l'enfant.
  */
 function Progress({ satisfied, total, unverified, birthDate }: {
   satisfied: number; total: number; unverified: number; birthDate: string
@@ -132,24 +138,24 @@ function Progress({ satisfied, total, unverified, birthDate }: {
     }`}>
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-ink-muted m-0 text-[11px] font-bold tracking-[0.09em] uppercase">
-          Vaccins obligatoires à jour
+          Vaccins obligatoires inscrits
         </h2>
         <Explainable
           explanation={progressExplanation(satisfied, total, birthDate)}
-          ariaLabel={`${satisfied} vaccins obligatoires à jour sur ${total} — voir l'explication`}
+          ariaLabel={`${satisfied} vaccins obligatoires inscrits sur ${total} — voir l'explication`}
           className={`tnum shrink-0 text-[13px] font-bold ${complete ? 'text-ok' : 'text-ink'}`}
         >
           {satisfied} / {total}
         </Explainable>
       </div>
       <div className="bg-line-soft mt-2.5 h-2 overflow-hidden rounded-full" role="img"
-        aria-label={`${satisfied} obligations satisfaites sur ${total}`}>
+        aria-label={`${satisfied} vaccins obligatoires entièrement inscrits sur ${total}`}>
         <div className={`h-full rounded-full ${complete ? 'bg-ok' : 'bg-blue-500'}`}
           style={{ width: `${Math.max(3, ratio * 100)}%` }} />
       </div>
       <p className="text-ink-muted m-0 mt-2 text-[12px] leading-snug text-pretty">
         {complete
-          ? "Tous les vaccins obligatoires sont à jour à ce jour."
+          ? "Toutes les doses obligatoires sont inscrites au carnet."
           : "Appuyez sur le chiffre pour comprendre ce qu'il compte."}
         {unverified > 0 && ` ${unverified} vaccination${unverified > 1 ? 's' : ''} importée${unverified > 1 ? 's' : ''} reste${unverified > 1 ? 'nt' : ''} à vérifier.`}
       </p>
@@ -160,56 +166,36 @@ function Progress({ satisfied, total, unverified, birthDate }: {
 /**
  * Le rattrapage n'est pas un simple décalage des doses manquées : pour le
  * méningocoque B, le schéma lui-même change selon l'âge auquel il commence.
- * La carte affiche donc la tranche appliquée, pas seulement des dates.
+ * La carte restitue le tableau publié, toutes tranches confondues. Elle ne
+ * sélectionne pas la ligne qui s'appliquerait à cet enfant : ce choix est un
+ * acte médical, pas un affichage.
  */
-function CatchUpCard({ plan }: { plan: CatchUpPlan }) {
+function CatchUpCard({ reference }: { reference: CatchUpReference }) {
   return (
-    <article className="border-due-border bg-due-bg rounded-[12px] border p-3.5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 flex-col gap-1">
-          <h3 className="m-0 text-[15px] font-semibold tracking-tight">{plan.valenceLabel}</h3>
-          <p className="text-ink-strong m-0 text-[12.5px]">{plan.ruleLabel}</p>
-        </div>
-        {plan.recommendedOnly && (
-          <span className="text-ink-muted border-line bg-surface shrink-0 rounded-full border px-2 py-0.5 text-[10.5px] font-bold">
-            Recommandé
-          </span>
-        )}
-      </div>
+    <article className="border-line bg-surface rounded-[12px] border p-3.5">
+      <h3 className="m-0 text-[15px] font-semibold tracking-tight">{reference.valenceLabel}</h3>
 
-      {/*
-       * L'app reproduit le calendrier officiel appliqué à l'âge de l'enfant,
-       * elle ne le prescrit pas : c'est ce qui distingue une information d'une
-       * recommandation individualisée (MDCG 2019-11). Le bandeau vient donc
-       * avant les dates, pas après, et « estimation » remplace tout langage
-       * prescriptif dans le libellé de chaque étape.
-       */}
-      <p className="border-line-strong text-ink-strong m-0 mt-2 mb-1 rounded-[8px] border border-dashed bg-white/50 px-2.5 py-2 text-[11.5px] leading-snug text-pretty">
-        Reproduction du calendrier officiel pour cette tranche d'âge — pas un avis médical.
-        <strong> Seul un professionnel de santé décide de la date et du vaccin.</strong>
-      </p>
-
-      {plan.alreadyGiven > 0 && (
-        <p className="text-ink-muted m-0 mt-1.5 text-[12px]">
-          {plan.alreadyGiven} dose{plan.alreadyGiven > 1 ? 's' : ''} déjà enregistrée{plan.alreadyGiven > 1 ? 's' : ''}.
-        </p>
-      )}
-
-      <ol className="mt-2.5 mb-0 flex list-none flex-col gap-1.5 p-0">
-        {plan.steps.map((step) => (
-          <li key={step.n} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <span className="text-ink text-[13px] font-semibold">{step.label}</span>
-            <span className="text-ink-strong tnum text-[12.5px]">
-              estimation : entre le {humanDate(step.earliest)}
-              {step.latest ? ` et le ${humanDate(step.latest)}` : ' et la visite suivante'}
-            </span>
+      <ul className="mt-2.5 mb-0 flex list-none flex-col gap-2.5 p-0">
+        {reference.rows.map((row) => (
+          <li key={row.ageRange} className="border-line-soft flex flex-col gap-0.5 border-t pt-2 first:border-t-0 first:pt-0">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
+              <span className="text-ink text-[13px] font-semibold">{row.ageRange}</span>
+              {row.recommendedOnly && (
+                <span className="text-ink-muted border-line bg-paper-sunken shrink-0 rounded-full border px-2 py-0.5 text-[10.5px] font-bold">
+                  Recommandé
+                </span>
+              )}
+            </div>
+            <span className="text-ink-strong text-[12.5px] leading-snug text-pretty">{row.scheme}</span>
+            {row.booster && (
+              <span className="text-ink-strong text-[12.5px] leading-snug text-pretty">{row.booster}</span>
+            )}
+            {row.note && (
+              <span className="text-ink-muted text-[12px] leading-snug text-pretty">{row.note}</span>
+            )}
           </li>
         ))}
-      </ol>
-
-      {plan.note && (
-        <p className="text-ink-strong m-0 mt-2 text-[12px] leading-snug text-pretty">{plan.note}</p>
-      )}
+      </ul>
     </article>
   )
 }
@@ -231,20 +217,18 @@ function VisitSection({ title, groups, onPick, explanations }: {
   )
 }
 
-const RAIL: Record<string, string> = { late: '#B23D1F', due: '#A87F1F', upcoming: '#C2D2E1' }
+const RAIL = { done: '#1E7351', 'not-recorded': '#C2D2E1' } as const
 
 function VisitCard({ group, onPick, explanations }: {
   group: DoseGroup; onPick: (g: DoseGroup) => void; explanations: Map<string, Explanation>
 }) {
-  const detail =
-    group.state === 'late' ? `Fenêtre dépassée depuis ${group.daysLate} jours`
-    : group.state === 'due' ? `À faire depuis ${group.daysSinceTarget} jours`
-    : `Cible le ${humanDate(group.targetDate)}`
+  const state = group.complete ? 'done' : 'not-recorded'
+  const detail = `Calendrier officiel · rendez-vous ${group.label}`
   const mandatory = group.doses.filter((d) => d.mandatory).length
 
   return (
     <article className="border-line bg-surface rounded-[12px] border p-3.5"
-      style={{ borderLeft: `3px solid ${RAIL[group.state]}` }}>
+      style={{ borderLeft: `3px solid ${RAIL[state]}` }}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-1">
           <h3 className="m-0 text-[16px] font-semibold tracking-tight">Rendez-vous {group.label}</h3>
@@ -253,7 +237,7 @@ function VisitCard({ group, onPick, explanations }: {
             {mandatory > 0 && ` · ${mandatory} obligatoire${mandatory > 1 ? 's' : ''}`}
           </p>
         </div>
-        <StatusPill state={group.state} />
+        <StatusPill state={state} />
       </div>
 
       {/* Pastilles de 32 px espacées de 8 : la pastille entière est la cible,

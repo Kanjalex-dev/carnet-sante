@@ -1,16 +1,14 @@
-import { addDays, addMonths, ageInMonths, compare, type ISODate } from './dates'
-import type { Schedule, ValenceSpec, VaccinationEvent } from './types'
+import type { Schedule, ValenceSpec } from './types'
 
 /**
- * Rattrapage vaccinal.
+ * Restitution du référentiel de rattrapage.
  *
- * Le calendrier ne se contente pas de décaler les doses manquées : pour
- * certaines valences, le schéma lui-même change selon l'âge auquel le
- * rattrapage commence. Le méningocoque B en est l'exemple — deux doses et un
- * rappel avant 2 ans, deux doses sans rappel entre 2 et 5 ans.
- *
- * Ces règles viennent du référentiel, jamais du code. L'application propose,
- * elle ne prescrit pas : chaque plan renvoie au médecin.
+ * Ce module ne prend aucune donnee d'enfant en entree : ni date de naissance,
+ * ni doses recues, ni date du jour. C'est deliberé. Choisir la tranche d'âge
+ * applicable à un enfant donné et en déduire des dates, ce serait appliquer
+ * une règle à un patient. Ici on se contente d'afficher le tableau publié par
+ * le ministère, comme le ferait une page du carnet papier : le parent lit, et
+ * son médecin décide.
  */
 
 export interface CatchUpRule {
@@ -28,129 +26,79 @@ export interface CatchUpRule {
   label: string
 }
 
-export interface CatchUpStep {
-  /** Rang de la dose dans le schéma de rattrapage. */
-  n: number
-  /** Date au plus tôt à laquelle cette dose peut être administrée. */
-  earliest: ISODate
-  /** Date au plus tard, quand la règle en impose une. */
-  latest?: ISODate
-  label: string
-  isBooster: boolean
-}
-
-export interface CatchUpPlan {
-  valenceCode: string
-  valenceLabel: string
-  /** Libellé de la tranche d'âge appliquée. */
-  ruleLabel: string
-  /** Nombre de doses déjà reçues et comptées dans ce schéma. */
-  alreadyGiven: number
-  steps: CatchUpStep[]
+/** Une ligne du tableau, prête à afficher. Aucune date, aucun calcul. */
+export interface CatchUpRow {
+  /** Libellé de la tranche d'âge, tel qu'il figure au référentiel. */
+  ageRange: string
+  /** Schéma en clair : nombre de doses et intervalle minimal. */
+  scheme: string
+  /** Rappel prévu par cette tranche, quand il y en a un. */
+  booster?: string
   note?: string
   recommendedOnly: boolean
 }
 
-function givenDates(code: string, events: VaccinationEvent[]): ISODate[] {
-  return events
-    .filter((e) => !e.deletedAt && e.valences.includes(code))
-    .map((e) => e.date)
-    .sort(compare)
+export interface CatchUpReference {
+  valenceCode: string
+  valenceLabel: string
+  rows: CatchUpRow[]
 }
 
-export function ruleFor(v: ValenceSpec, ageMonths: number): CatchUpRule | undefined {
+function plural(n: number, one: string, many: string): string {
+  return n > 1 ? `${n} ${many}` : `${n} ${one}`
+}
+
+function intervalText(days: number): string {
+  if (days % 30 === 0) return `${plural(days / 30, 'mois', 'mois')}`
+  return `${plural(days, 'jour', 'jours')}`
+}
+
+export function describeRule(r: CatchUpRule): CatchUpRow {
+  const scheme = r.primaryDoses > 1
+    ? `${plural(r.primaryDoses, 'dose', 'doses')}, espacées d'au moins ${intervalText(r.minIntervalDays)}`
+    : '1 dose'
+
+  let booster: string | undefined
+  if (r.booster) {
+    const parts: string[] = []
+    if (r.boosterMinAgeMonths !== undefined) parts.push(`à partir de ${r.boosterMinAgeMonths} mois`)
+    if (r.boosterMaxAgeMonths !== undefined) parts.push(`avant ${r.boosterMaxAgeMonths} mois`)
+    if (r.boosterMinIntervalDays !== undefined) {
+      parts.push(`au moins ${intervalText(r.boosterMinIntervalDays)} après la dernière dose`)
+    }
+    booster = parts.length > 0
+      ? `${r.boosterLabel ?? 'Rappel'} : ${parts.join(', ')}`
+      : (r.boosterLabel ?? 'Rappel')
+  }
+
+  return {
+    ageRange: r.label,
+    scheme,
+    booster,
+    note: r.note,
+    recommendedOnly: r.recommendedOnly === true,
+  }
+}
+
+/** Le tableau de rattrapage d'une valence, ou `null` si le référentiel n'en publie pas. */
+export function catchUpReference(v: ValenceSpec): CatchUpReference | null {
   const rules = (v as ValenceSpec & { catchUp?: CatchUpRule[] }).catchUp
-  if (!rules) return undefined
-  return rules.find((r) => ageMonths >= r.fromAgeMonths && ageMonths <= r.toAgeMonths)
-}
-
-/**
- * Construit le plan de rattrapage d'une valence pour un enfant donné.
- * Renvoie `null` quand aucune règle ne s'applique, ou quand le schéma de
- * rattrapage est déjà complet.
- */
-export function catchUpPlan(
-  v: ValenceSpec,
-  birthDate: ISODate,
-  today: ISODate,
-  events: VaccinationEvent[],
-): CatchUpPlan | null {
-  const ageMonths = ageInMonths(birthDate, today)
-  const rule = ruleFor(v, ageMonths)
-  if (!rule) return null
-
-  const given = givenDates(v.code, events)
-  const total = rule.primaryDoses + (rule.booster ? 1 : 0)
-  if (given.length >= total) return null
-
-  const steps: CatchUpStep[] = []
-  // Point de départ : aujourd'hui, ou l'intervalle minimal après la dernière
-  // dose reçue si celle-ci est récente.
-  let cursor = today
-  const last = given[given.length - 1]
-  if (last) {
-    const after = addDays(last, rule.minIntervalDays)
-    if (compare(after, cursor) > 0) cursor = after
-  }
-
-  for (let n = given.length + 1; n <= rule.primaryDoses; n += 1) {
-    steps.push({
-      n,
-      earliest: cursor,
-      label: `Dose ${n} sur ${rule.primaryDoses}`,
-      isBooster: false,
-    })
-    cursor = addDays(cursor, rule.minIntervalDays)
-  }
-
-  if (rule.booster && given.length < total) {
-    // Le rappel est borné soit par un âge, soit par un délai après la
-    // primovaccination — selon la tranche.
-    let earliest = cursor
-    if (rule.boosterMinAgeMonths !== undefined) {
-      const byAge = addMonths(birthDate, rule.boosterMinAgeMonths)
-      if (compare(byAge, earliest) > 0) earliest = byAge
-    }
-    if (rule.boosterMinIntervalDays !== undefined) {
-      const base = steps.length > 0 ? steps[steps.length - 1].earliest : (last ?? today)
-      const byInterval = addDays(base, rule.boosterMinIntervalDays)
-      if (compare(byInterval, earliest) > 0) earliest = byInterval
-    }
-    steps.push({
-      n: rule.primaryDoses + 1,
-      earliest,
-      latest: rule.boosterMaxAgeMonths !== undefined
-        ? addMonths(birthDate, rule.boosterMaxAgeMonths)
-        : undefined,
-      label: rule.boosterLabel ?? 'Rappel',
-      isBooster: true,
-    })
-  }
-
-  if (steps.length === 0) return null
-
+  if (!rules || rules.length === 0) return null
   return {
     valenceCode: v.code,
     valenceLabel: v.shortLabel,
-    ruleLabel: rule.label,
-    alreadyGiven: given.length,
-    steps,
-    note: rule.note,
-    recommendedOnly: rule.recommendedOnly === true,
+    rows: [...rules]
+      .sort((a, b) => a.fromAgeMonths - b.fromAgeMonths)
+      .map(describeRule),
   }
 }
 
-/** Tous les plans applicables à un enfant, pour les valences concernées. */
-export function catchUpPlans(
-  schedule: Schedule,
-  birthDate: ISODate,
-  today: ISODate,
-  events: VaccinationEvent[],
-): CatchUpPlan[] {
-  const out: CatchUpPlan[] = []
+/** Tous les tableaux publiés par le calendrier, dans l'ordre du référentiel. */
+export function catchUpReferences(schedule: Schedule): CatchUpReference[] {
+  const out: CatchUpReference[] = []
   for (const v of schedule.valences) {
-    const plan = catchUpPlan(v, birthDate, today, events)
-    if (plan) out.push(plan)
+    const ref = catchUpReference(v)
+    if (ref) out.push(ref)
   }
   return out
 }

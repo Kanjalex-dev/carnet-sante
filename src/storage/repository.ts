@@ -1,5 +1,7 @@
 import Dexie, { type Table } from 'dexie'
-import type { Child, EmergencyCard, GrowthMeasure, VaccinationEvent } from '../domain/types'
+import type {
+  Child, EmergencyCard, GrowthMeasure, ParentReminder, VaccinationEvent,
+} from '../domain/types'
 import {
   type BackedAttachment, type BackupPayload, fromBase64, toBase64,
 } from './backup'
@@ -16,6 +18,8 @@ export interface Vault {
   growth: GrowthMeasure[]
   /** Optionnel : les coffres créés avant cette fonctionnalité n'en ont pas. */
   emergency?: EmergencyCard[]
+  /** Rappels créés par le parent. Optionnel pour les coffres antérieurs. */
+  reminders?: ParentReminder[]
 }
 
 export interface AttachmentMeta {
@@ -357,4 +361,35 @@ export async function saveEmergencyCard(card: EmergencyCard): Promise<void> {
 export async function attachmentUsage(): Promise<{ count: number; bytes: number }> {
   const all = await db.attachments.toArray()
   return { count: all.length, bytes: all.reduce((s, a) => s + a.bytes, 0) }
+}
+
+/* ------------------------------------------------------------------ rappels */
+
+/**
+ * Les rappels appartiennent au parent : il les crée, les date et les nomme.
+ * Rien ici ne les dérive du calendrier vaccinal — voir native/reminderPlan.ts.
+ */
+export async function listReminders(childId: string): Promise<ParentReminder[]> {
+  const v = await readVault()
+  return (v.reminders ?? [])
+    .filter((r) => r.childId === childId && !r.deletedAt)
+    .sort((a, b) => a.date.localeCompare(b.date))
+}
+
+export async function addReminder(
+  r: Omit<ParentReminder, 'id' | 'createdAt'>,
+): Promise<ParentReminder> {
+  const created: ParentReminder = { ...r, id: crypto.randomUUID(), createdAt: stamp() }
+  await mutate((v) => {
+    if (!v.reminders) v.reminders = []
+    v.reminders.push(created)
+  })
+  return created
+}
+
+export async function deleteReminder(id: string): Promise<void> {
+  await mutate((v) => {
+    const r = v.reminders?.find((x) => x.id === id)
+    if (r) r.deletedAt = stamp()
+  })
 }

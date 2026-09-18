@@ -1,0 +1,44 @@
+# --- Dependances et artefacts de construction --------------------------------
+node_modules/
+.next/
+out/
+dist/
+coverage/
+next-env.d.ts
+tsconfig.tsbuildinfo
+/public/icons/*.png
+
+# --- Secrets -----------------------------------------------------------------
+# .env porte le mot de passe Postgres, la cle de session et la cle de
+# chiffrement. Il n'est JAMAIS versionne. .env.example, lui, est suivi : il
+# documente les variables sans en donner les valeurs.
+.env
+.env.*
+!.env.example
+
+# --- Donnees personnelles ----------------------------------------------------
+# Ce depot contient du code, jamais de donnees. Les regles ci-dessous existent
+# pour qu'un fichier depose par erreur dans le dossier du projet ne parte pas
+# sur GitHub : releves bancaires, sauvegardes, exports de base.
+/data/
+/backups/
+/caddy_data/
+/caddy_config/
+*.csv
+*.ofx
+*.qfx
+*.qif
+*.dump
+*.sql.gz
+# Les migrations Prisma sont du schema, pas des donnees : elles restent suivies.
+*.sql
+!prisma/migrations/**/*.sql
+
+# --- Local uniquement --------------------------------------------------------
+# Genere par scripts/setup.sh en mode local ; il publie le port 3000 sur l'hote,
+# ce qui n'a aucun sens sur un serveur. Il ne doit pas voyager avec le depot.
+docker-compose.override.yml
+
+# --- Divers ------------------------------------------------------------------
+*.log
+.DS_Store
