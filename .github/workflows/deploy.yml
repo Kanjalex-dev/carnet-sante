@@ -30,7 +30,10 @@ jobs:
             echo "::error::Un export de carnet a été committé. Annulez ce commit."
             exit 1
           fi
-      - run: npx tsc --noEmit
+      # tsc --noEmit ne verifie RIEN sur ce depot : la racine n'a que des
+      # references de projet, et sans -b tsc ne descend pas dedans. Le piege a
+      # deja laisse passer une erreur de type en production.
+      - run: npx tsc -b
       - run: npm test -- --run
       - run: npm run build
 
