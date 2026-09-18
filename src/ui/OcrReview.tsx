@@ -295,16 +295,21 @@ function ProposalCard({ row, onChange }: { row: Row; onChange: (patch: Partial<R
             {row.date ? frDate(row.date) : 'Date à saisir'}
           </span>
           {row.valences.length > 0 ? (
-            <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
+            <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
               {row.valences.map((code) => {
                 const explanation = VALENCE_EXPLANATIONS.get(code)
                 const name = VALENCE_LABELS.get(code) ?? code
                 return (
                   <li key={code}
-                    className="border-line bg-paper-sunken text-ink-strong rounded-full border px-2 py-0.5 text-[11.5px]">
+                    className="border-line bg-paper-sunken text-ink-strong rounded-full border text-[11.5px]">
                     {explanation
-                      ? <Explainable explanation={explanation}>{name}</Explainable>
-                      : name}
+                      ? (
+                        <Explainable explanation={explanation} hitArea="none"
+                          className="flex min-h-8 items-center px-2.5">
+                          {name}
+                        </Explainable>
+                      )
+                      : <span className="flex min-h-8 items-center px-2.5">{name}</span>}
                   </li>
                 )
               })}

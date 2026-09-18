@@ -99,13 +99,28 @@ function InfoSheet({ explanation, onClose }: { explanation: Explanation; onClose
  * Le déclencheur, identique pour un nom de vaccin et pour un chiffre :
  * texte souligné en pointillés, suivi d'un point d'interrogation discret.
  */
-export function Explainable({ explanation, className = '', children, ariaLabel }: {
+export function Explainable({
+  explanation, className = '', children, ariaLabel, hitArea = 'extend',
+}: {
   explanation: Explanation
   className?: string
   children: ReactNode
   ariaLabel?: string
+  /**
+   * `extend` agrandit la zone tactile à 44 px sans toucher au dessin, par un
+   * pseudo-élément : le texte garde sa taille, le doigt trouve sa cible.
+   *
+   * `none` s'impose dans une liste dense — une pastille de valence fait 32 px
+   * et ses voisines sont à 8 px : une zone de 44 px empiéterait sur la ligne
+   * du dessus et ferait ouvrir la mauvaise explication. Là, c'est au parent
+   * porteur (la pastille) de fournir la surface.
+   */
+  hitArea?: 'extend' | 'none'
 }) {
   const open = useExplain()
+  const hit = hitArea === 'extend'
+    ? "relative before:absolute before:inset-x-0 before:top-1/2 before:h-11 before:-translate-y-1/2 before:content-['']"
+    : ''
   return (
     <button
       type="button"
@@ -113,7 +128,7 @@ export function Explainable({ explanation, className = '', children, ariaLabel }
       aria-label={ariaLabel ?? `${explanation.title} — voir l'explication`}
       // Un seul signal d'affordance dans toute l'application : le point
       // d'interrogation. Pas de soulignement ici, pas de survol ailleurs.
-      className={`inline-flex items-center gap-1 text-left ${className}`}
+      className={`inline-flex items-center gap-1 text-left ${hit} ${className}`}
     >
       {children}
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"

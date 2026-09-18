@@ -184,16 +184,21 @@ function EventRow({ event, onDelete, onVerify, onAttach, onDetach, childId, expl
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-1">
           <span className="text-[15px] font-semibold tracking-tight">{humanDate(event.date)}</span>
-          <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
+          <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
             {event.valences.map((code) => {
               const explanation = explanations.get(code)
               const name = labels.get(code) ?? code
               return (
                 <li key={code}
-                  className="border-line bg-paper-sunken text-ink-strong rounded-full border px-2 py-0.5 text-[11.5px]">
+                  className="border-line bg-paper-sunken text-ink-strong rounded-full border text-[11.5px]">
                   {explanation
-                    ? <Explainable explanation={explanation}>{name}</Explainable>
-                    : name}
+                    ? (
+                      <Explainable explanation={explanation} hitArea="none"
+                        className="flex min-h-8 items-center px-2.5">
+                        {name}
+                      </Explainable>
+                    )
+                    : <span className="flex min-h-8 items-center px-2.5">{name}</span>}
                 </li>
               )
             })}

@@ -256,7 +256,10 @@ function VisitCard({ group, onPick, explanations }: {
         <StatusPill state={group.state} />
       </div>
 
-      <ul className="mt-2.5 mb-0 flex list-none flex-wrap gap-1.5 p-0">
+      {/* Pastilles de 32 px espacées de 8 : la pastille entière est la cible,
+          et l'écart reste supérieur à la hauteur pour qu'une ligne ne morde
+          jamais sur celle du dessus. */}
+      <ul className="mt-2.5 mb-0 flex list-none flex-wrap gap-2 p-0">
         {group.doses.map((d) => {
           const explanation = explanations.get(d.valenceCode)
           const content = (
@@ -267,10 +270,15 @@ function VisitCard({ group, onPick, explanations }: {
           )
           return (
             <li key={`${d.valenceCode}-${d.doseNumber}`}
-              className="border-line bg-paper-sunken text-ink-strong rounded-full border px-2.5 py-1 text-[12px]">
+              className="border-line bg-paper-sunken text-ink-strong rounded-full border text-[12px]">
               {explanation
-                ? <Explainable explanation={explanation}>{content}</Explainable>
-                : content}
+                ? (
+                  <Explainable explanation={explanation} hitArea="none"
+                    className="flex min-h-8 items-center px-2.5 py-1.5">
+                    {content}
+                  </Explainable>
+                )
+                : <span className="flex min-h-8 items-center px-2.5 py-1.5">{content}</span>}
             </li>
           )
         })}
