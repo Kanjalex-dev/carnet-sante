@@ -30,6 +30,9 @@ export function Onboarding({ onCreate }: {
         <section className="border-line-strong bg-surface flex flex-col gap-3 rounded-[12px] border p-4">
           <h2 className="m-0 text-[17px] font-semibold tracking-tight">{D.title}</h2>
           <p className="text-ink-strong m-0 text-[14px] leading-snug text-pretty">{D.body}</p>
+          <p className="border-line text-blue-700 m-0 border-t pt-3 text-[14px] leading-snug font-medium text-pretty">
+            {D.pivot}
+          </p>
           <p className="text-ink-muted m-0 text-[12.5px] leading-snug text-pretty">{D.footer}</p>
           <Button onClick={() => setAccepted(true)}>{D.accept}</Button>
         </section>
