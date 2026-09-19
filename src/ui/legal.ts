@@ -23,7 +23,7 @@
 
 export const INTENDED_PURPOSE = `Carnet est une aide au rappel et un outil personnel d'archivage. Il permet à un parent d'enregistrer, de photographier et de retrouver les informations figurant dans le carnet de santé papier, et de conserver la trace des vaccinations déjà faites.
 
-À partir de la seule date de naissance saisie par l'utilisateur, Carnet applique le calendrier vaccinal publié par le ministère de la Santé et signale les rendez-vous que ce calendrier prévoit à cet âge. Ce signalement est l'application d'un barème public à une date : il est identique pour toute personne née le même mois.
+À partir de la seule date de naissance saisie par l'utilisateur, Carnet applique le calendrier vaccinal publié par le ministère de la Santé et affiche les échéances que ce calendrier fait figurer à cet âge. Ce signalement est l'application d'un barème public à une date : il est identique pour toute personne née le même mois.
 
 Carnet n'examine personne. Il ne connaît ni les antécédents, ni les contre-indications, ni la prématurité, ni les décisions déjà prises par le médecin. Les indications qu'il affiche ne constituent ni un diagnostic, ni une prescription, ni un avis médical, et ne sont destinées à fonder aucune décision de vaccination. Seul le professionnel de santé qui suit la personne peut déterminer ce qui la concerne.
 
@@ -31,9 +31,9 @@ Carnet ne remplace pas le carnet de santé papier, qui reste le document de réf
 
 /** Affiché une fois à l'installation, avec validation explicite. */
 export const ONBOARDING_DISCLAIMER = {
-  title: 'Carnet vous aide à ne rien oublier. Il ne vous conseille pas.',
-  body: `À partir de la date de naissance, Carnet applique le calendrier vaccinal officiel et signale ce qu'il prévoit à cet âge. Il ne connaît ni les antécédents, ni les contre-indications, ni la prématurité, ni ce que votre médecin a décidé.`,
-  pivot: "Un rendez-vous signalé ici n'est pas un rendez-vous à prendre : c'est une question à poser.",
+  title: 'Carnet garde la trace de ce que vous y inscrivez et affiche le calendrier officiel. Il ne vous conseille pas.',
+  body: `À partir de la date de naissance, Carnet affiche les échéances que le calendrier vaccinal officiel fait figurer à cet âge. Il ne connaît ni les antécédents, ni les contre-indications, ni la prématurité, ni ce que votre médecin a décidé.`,
+  pivot: "Une échéance signalée ici n'est pas un rendez-vous à prendre : c'est une question à poser.",
   footer:
     'La consultation médicale reste indispensable. Carnet ne remplace pas le carnet de santé papier.',
   accept: "J'ai lu et compris ce que Carnet fait, et ce qu'il ne fait pas",
@@ -45,7 +45,7 @@ export const ONBOARDING_DISCLAIMER = {
  * qualifie la nature de l'indication. Ne pas la réduire ni la replier.
  */
 export function computedNotice(firstName: string): string {
-  return `Calculé à partir du calendrier officiel et de la date de naissance saisie. Carnet ne connaît pas la situation médicale de ${firstName} : seul son médecin peut confirmer que ce rendez-vous la ou le concerne.`
+  return `Calculé à partir du calendrier officiel et de la date de naissance saisie. Carnet ne connaît pas la situation médicale de ${firstName} : seul un médecin peut déterminer ce qui la ou le concerne.`
 }
 
 /** Tampon de traçabilité : quelle version du barème, appliquée quand. */

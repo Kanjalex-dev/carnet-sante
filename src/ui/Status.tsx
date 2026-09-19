@@ -396,8 +396,10 @@ function CarnetState({ recorded, notRecorded }: { recorded: number; notRecorded:
         État du carnet
       </span>
       <p className="font-display m-0 text-[19px] leading-tight">
-        {recorded} échéance{recorded > 1 ? 's' : ''} inscrite{recorded > 1 ? 's' : ''}{' '}
-        <span className="text-ink-muted">· {notRecorded} pas encore</span>
+        {recorded} inscription{recorded > 1 ? 's' : ''} enregistrée{recorded > 1 ? 's' : ''}
+      </p>
+      <p className="text-ink-muted m-0 text-[13px] leading-snug text-pretty">
+        {notRecorded} échéance{notRecorded > 1 ? 's' : ''} du calendrier sans inscription dans ce carnet.
       </p>
       <p className="text-ink-strong border-line m-0 border-t pt-2.5 text-[12.5px] leading-snug text-pretty">
         Une échéance qui n’est pas inscrite ne veut pas dire qu’elle n’a pas eu lieu :
