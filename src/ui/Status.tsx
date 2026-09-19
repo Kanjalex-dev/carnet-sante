@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { today as todayFn } from '../domain/dates'
 import { computeStatus, groupByVisit, summarise } from '../domain/status'
 import { catchUpReferences, type CatchUpReference } from '../domain/catchup'
+import { buildTimeline, type VisitPosition } from '../domain/timeline'
+import { PERMANENT_FOOTER, computedNotice, referentialStamp } from './legal'
 import type { DoseGroup } from '../domain/status'
 import type { Explanation } from './Explain'
 import type { Child, Schedule, VaccinationEvent } from '../domain/types'
@@ -38,6 +40,13 @@ export function Status({ child, schedule, events, onRecord, onRemindersChange }:
   // publié, affiché tel quel. Voir domain/catchup.ts.
   const catchUp = useMemo(() => catchUpReferences(schedule), [schedule])
 
+  // Application du calendrier officiel a la date de naissance. Seule frontiere
+  // ou Carnet passe d'une restitution a une indication : voir domain/timeline.ts.
+  const timeline = useMemo(
+    () => buildTimeline(schedule, child.birthDate, events, today),
+    [schedule, child.birthDate, events, today],
+  )
+
   // On compte les injections non vérifiées, pas les valences : une seule
   // injection en couvre jusqu'à six, et afficher « 21 » pour 12 lignes ment.
   const unverifiedEvents = events.filter((e) => !e.deletedAt && !e.verifiedByUser).length
@@ -73,11 +82,17 @@ export function Status({ child, schedule, events, onRecord, onRemindersChange }:
       {emergency && <Emergency child={child} onClose={() => setEmergency(false)} />}
 
       <main className="flex flex-1 flex-col gap-5 px-5 pb-6">
-        <h1 className="font-display m-0 text-[30px] leading-[1.14] font-normal tracking-tight text-pretty">
-          {open.length > 0
-            ? <span><span className="font-medium">{open.length} rendez&#8209;vous</span> du calendrier ne sont pas encore inscrits au carnet.</span>
-            : <span>Toutes les lignes du calendrier sont inscrites au carnet.</span>}
-        </h1>
+        <CalendarPosition
+          timeline={timeline}
+          firstName={child.firstName}
+          scheduleLabel={schedule.label}
+          onRecord={() => {
+            const g = visits.find((v) => v.key === timeline.current?.key)
+            if (g) setEntry(g)
+          }}
+        />
+
+        <CarnetState recorded={recorded.length} notRecorded={open.length} />
 
         <Progress
           satisfied={summary.mandatoryComplete}
@@ -86,8 +101,28 @@ export function Status({ child, schedule, events, onRecord, onRemindersChange }:
           birthDate={child.birthDate}
         />
 
-        <VisitSection title="Non inscrits au carnet" groups={open} onPick={setEntry} explanations={explanations} />
-        <VisitSection title="Inscrits" groups={recorded} onPick={setEntry} explanations={explanations} />
+        {/* Replie par defaut : le decompte reste visible dans l'en-tete, seul
+            le scroll disparait. La longueur d'une liste est un message. */}
+        <details className="group">
+          <summary className="border-line bg-surface-soft flex min-h-11 cursor-pointer list-none items-center gap-2.5 rounded-[12px] border px-3.5 py-3">
+            <span className="flex min-w-0 flex-grow flex-col">
+              <b className="text-[13.5px] font-semibold">Plus tôt dans le calendrier</b>
+              <span className="text-ink-muted text-[12px]">
+                {open.length + recorded.length} échéances · {recorded.length} inscrite
+                {recorded.length > 1 ? 's' : ''}, {open.length} pas encore
+              </span>
+            </span>
+            <svg className="text-blue-500 shrink-0 transition-transform group-open:rotate-180"
+              width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m7 10 5 5 5-5" />
+            </svg>
+          </summary>
+          <div className="flex flex-col gap-5 pt-3.5">
+            <VisitSection title="Non inscrits au carnet" groups={open} onPick={setEntry} explanations={explanations} />
+            <VisitSection title="Inscrits" groups={recorded} onPick={setEntry} explanations={explanations} />
+          </div>
+        </details>
 
         <Reminders childId={child.id} onChange={onRemindersChange} />
 
@@ -110,6 +145,8 @@ export function Status({ child, schedule, events, onRecord, onRemindersChange }:
           source vérifiée le {humanDate(schedule.checkedAt)}.
           Votre médecin adapte ce calendrier à votre enfant.
         </p>
+
+        <p className="text-ink-faint m-0 text-[11.5px] leading-snug text-pretty">{PERMANENT_FOOTER}</p>
       </main>
 
       <LegalNotice />
@@ -278,5 +315,94 @@ function VisitCard({ group, onPick, explanations }: {
         </button>
       </div>
     </article>
+  )
+}
+
+/**
+ * Application du calendrier officiel a la date de naissance.
+ *
+ * Trois regles de presentation, non negociables :
+ *  - la mention est au meme corps que le texte qu'elle tempere, jamais reduite ;
+ *  - le tampon de referentiel est affiche avec le resultat, pas dans les reglages ;
+ *  - le titre reste une echeance du calendrier, jamais une conduite a tenir.
+ */
+function CalendarPosition({ timeline, firstName, scheduleLabel, onRecord }: {
+  timeline: ReturnType<typeof buildTimeline>
+  firstName: string
+  scheduleLabel: string
+  onRecord: () => void
+}) {
+  const v: VisitPosition | null = timeline.current
+  return (
+    <section className="border-blue-edge bg-blue-100 flex flex-col gap-3 rounded-[12px] border p-4">
+      <span className="text-ink-muted text-[12px]">
+        {humanAge(timeline.ageMonths)} · au {humanDate(timeline.appliedOn)}
+      </span>
+
+      {v ? (
+        <>
+          <h1 className="font-display text-blue-700 m-0 text-[23px] leading-[1.2] font-normal tracking-tight text-pretty">
+            Le calendrier officiel prévoit une échéance à cet âge.
+          </h1>
+          <p className="text-ink-strong m-0 text-[13.5px] leading-snug text-pretty">
+            L’échéance {v.label} est la seule que le calendrier place à cet âge.
+          </p>
+          <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+            {v.doses.map((d) => (
+              <li key={`${d.valenceCode}-${d.doseNumber}`}
+                className="border-line bg-surface rounded-[8px] border px-3 py-2 text-[13.5px]">
+                {d.shortLabel} <span className="text-ink-muted">dose {d.doseNumber}</span>
+              </li>
+            ))}
+          </ul>
+          <button onClick={onRecord}
+            className="bg-blue-500 min-h-11 rounded-[9px] px-4 text-[14px] font-semibold text-white">
+            Inscrire cette échéance au carnet
+          </button>
+        </>
+      ) : (
+        <>
+          <h1 className="font-display text-blue-700 m-0 text-[23px] leading-[1.2] font-normal tracking-tight text-pretty">
+            Rien n’est prévu au calendrier à cet âge.
+          </h1>
+          {timeline.nextLandmark && (
+            <p className="text-ink-strong m-0 text-[13.5px] leading-snug text-pretty">
+              Le prochain repère du calendrier est l’échéance {timeline.nextLandmark.label}.
+            </p>
+          )}
+        </>
+      )}
+
+      <p className="text-ink-strong border-line m-0 border-t pt-3 text-[12.5px] leading-snug text-pretty">
+        {computedNotice(firstName)}
+      </p>
+      <p className="text-ink-muted m-0 text-[11.5px] tnum">
+        {referentialStamp(scheduleLabel, humanDate(timeline.appliedOn))}
+      </p>
+    </section>
+  )
+}
+
+/**
+ * Le compteur mesure le carnet, pas l'enfant : pas de fraction, pas de barre
+ * de progression, pas de decompte d'obligatoires. La phrase sous le chiffre
+ * est le composant, pas une mention — c'est elle qui retire au nombre son
+ * pouvoir d'accusation.
+ */
+function CarnetState({ recorded, notRecorded }: { recorded: number; notRecorded: number }) {
+  return (
+    <section className="border-line bg-surface-soft flex flex-col gap-2 rounded-[12px] border p-4">
+      <span className="text-ink-muted text-[10.5px] font-bold tracking-[0.09em] uppercase">
+        État du carnet
+      </span>
+      <p className="font-display m-0 text-[19px] leading-tight">
+        {recorded} échéance{recorded > 1 ? 's' : ''} inscrite{recorded > 1 ? 's' : ''}{' '}
+        <span className="text-ink-muted">· {notRecorded} pas encore</span>
+      </p>
+      <p className="text-ink-strong border-line m-0 border-t pt-2.5 text-[12.5px] leading-snug text-pretty">
+        Une échéance qui n’est pas inscrite ne veut pas dire qu’elle n’a pas eu lieu :
+        elle veut dire qu’elle n’est pas encore dans ce carnet.
+      </p>
+    </section>
   )
 }
