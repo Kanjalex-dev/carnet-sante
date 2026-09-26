@@ -320,11 +320,20 @@ function VisitCard({ group, onPick, explanations }: {
       <div className="bg-line-soft my-3 h-px" />
       <div className="flex flex-wrap items-center justify-between gap-2.5">
         <span className="text-ink-muted min-w-0 flex-1 text-[12px] font-medium">{detail}</span>
-        <button onClick={() => onPick(group)}
-          className="bg-blue-500 inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-[8px] px-3.5 text-[13px] font-semibold text-white">
-          <IconCheck size={15} color="#FFFFFF" />
-          Marquer fait
-        </button>
+        {group.complete
+          ? (
+            <button onClick={() => onPick(group)}
+              className="border-blue-500 text-blue-500 inline-flex min-h-11 shrink-0 items-center rounded-[8px] border px-3.5 text-[13px] font-semibold">
+              Modifier
+            </button>
+          )
+          : (
+            <button onClick={() => onPick(group)}
+              className="bg-blue-500 inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-[8px] px-3.5 text-[13px] font-semibold text-white">
+              <IconCheck size={15} color="#FFFFFF" />
+              Inscrire
+            </button>
+          )}
       </div>
     </article>
   )
