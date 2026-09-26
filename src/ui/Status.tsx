@@ -82,17 +82,24 @@ export function Status({ child, schedule, events, onRecord, onRemindersChange }:
       {emergency && <Emergency child={child} onClose={() => setEmergency(false)} />}
 
       <main className="flex flex-1 flex-col gap-5 px-5 pb-6">
+        {/* Le carnet d'abord. Un carnet de sante sert a garder la trace de ce
+            qui a ete fait ; le calendrier n'est qu'un repere en second. */}
+        <CarnetState recorded={recorded.length} notRecorded={open.length} />
+
+        <VisitSection title="Inscrit au carnet" groups={recorded} onPick={setEntry}
+          explanations={explanations}
+          empty="Rien n'est encore inscrit. Photographiez une page du carnet papier ou saisissez une vaccination." />
+
         <CalendarPosition
           timeline={timeline}
           firstName={child.firstName}
           scheduleLabel={schedule.label}
+          explanations={explanations}
           onRecord={() => {
             const g = visits.find((v) => v.key === timeline.current?.key)
             if (g) setEntry(g)
           }}
         />
-
-        <CarnetState recorded={recorded.length} notRecorded={open.length} />
 
         <Progress
           satisfied={summary.mandatoryComplete}
@@ -103,13 +110,12 @@ export function Status({ child, schedule, events, onRecord, onRemindersChange }:
 
         {/* Replie par defaut : le decompte reste visible dans l'en-tete, seul
             le scroll disparait. La longueur d'une liste est un message. */}
-        <details className="group">
+        <details className="group" open>
           <summary className="border-line bg-surface-soft flex min-h-11 cursor-pointer list-none items-center gap-2.5 rounded-[12px] border px-3.5 py-3">
             <span className="flex min-w-0 flex-grow flex-col">
-              <b className="text-[13.5px] font-semibold">Plus tôt dans le calendrier</b>
+              <b className="text-[13.5px] font-semibold">Le reste du calendrier</b>
               <span className="text-ink-muted text-[12px]">
-                {open.length + recorded.length} échéances · {recorded.length} inscrite
-                {recorded.length > 1 ? 's' : ''}, {open.length} pas encore
+                Ce que le calendrier officiel prévoit aux autres âges
               </span>
             </span>
             <svg className="text-blue-500 shrink-0 transition-transform group-open:rotate-180"
@@ -119,8 +125,7 @@ export function Status({ child, schedule, events, onRecord, onRemindersChange }:
             </svg>
           </summary>
           <div className="flex flex-col gap-5 pt-3.5">
-            <VisitSection title="Non inscrits au carnet" groups={open} onPick={setEntry} explanations={explanations} />
-            <VisitSection title="Inscrits" groups={recorded} onPick={setEntry} explanations={explanations} />
+            <VisitSection title="Pas encore inscrit" groups={open} onPick={setEntry} explanations={explanations} />
           </div>
         </details>
 
@@ -237,19 +242,26 @@ function CatchUpCard({ reference }: { reference: CatchUpReference }) {
   )
 }
 
-function VisitSection({ title, groups, onPick, explanations }: {
+function VisitSection({ title, groups, onPick, explanations, empty }: {
   title: string
   groups: DoseGroup[]
   onPick: (g: DoseGroup) => void
   explanations: Map<string, Explanation>
+  empty?: string
 }) {
-  if (groups.length === 0) return null
+  if (groups.length === 0 && !empty) return null
   return (
     <section className="flex flex-col gap-2.5">
       <h2 className="text-ink-muted m-0 text-[11px] font-bold tracking-[0.09em] uppercase">{title}</h2>
-      {groups.map((g) => (
-        <VisitCard key={g.key} group={g} onPick={onPick} explanations={explanations} />
-      ))}
+      {groups.length === 0
+        ? (
+          <p className="border-line bg-surface-soft text-ink-strong m-0 rounded-[12px] border border-dashed px-4 py-5 text-[13.5px] leading-snug text-pretty">
+            {empty}
+          </p>
+        )
+        : groups.map((g) => (
+          <VisitCard key={g.key} group={g} onPick={onPick} explanations={explanations} />
+        ))}
     </section>
   )
 }
@@ -326,10 +338,11 @@ function VisitCard({ group, onPick, explanations }: {
  *  - le tampon de referentiel est affiche avec le resultat, pas dans les reglages ;
  *  - le titre reste une echeance du calendrier, jamais une conduite a tenir.
  */
-function CalendarPosition({ timeline, firstName, scheduleLabel, onRecord }: {
+function CalendarPosition({ timeline, firstName, scheduleLabel, explanations, onRecord }: {
   timeline: ReturnType<typeof buildTimeline>
   firstName: string
   scheduleLabel: string
+  explanations: Map<string, Explanation>
   onRecord: () => void
 }) {
   const v: VisitPosition | null = timeline.current
@@ -348,12 +361,28 @@ function CalendarPosition({ timeline, firstName, scheduleLabel, onRecord }: {
             L’échéance {v.label} est la seule que le calendrier place à cet âge.
           </p>
           <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
-            {v.doses.map((d) => (
-              <li key={`${d.valenceCode}-${d.doseNumber}`}
-                className="border-line bg-surface rounded-[8px] border px-3 py-2 text-[13.5px]">
-                {d.shortLabel} <span className="text-ink-muted">dose {d.doseNumber}</span>
-              </li>
-            ))}
+            {v.doses.map((d) => {
+              const explanation = explanations.get(d.valenceCode)
+              const label = (
+                <>{d.shortLabel} <span className="text-ink-muted">dose {d.doseNumber}</span></>
+              )
+              return (
+                <li key={`${d.valenceCode}-${d.doseNumber}`}
+                  className="border-line bg-surface rounded-[8px] border text-[13.5px]">
+                  {/* « Meningocoque ACWY dose 2 » ne dit rien a un parent. Le
+                      texte du referentiel — ce contre quoi le vaccin protege —
+                      est la seule chose qui rende cette ligne comprehensible. */}
+                  {explanation
+                    ? (
+                      <Explainable explanation={explanation}
+                        className="flex min-h-11 w-full items-center px-3 py-2">
+                        {label}
+                      </Explainable>
+                    )
+                    : <span className="flex min-h-11 items-center px-3 py-2">{label}</span>}
+                </li>
+              )
+            })}
           </ul>
           <button onClick={onRecord}
             className="bg-blue-500 min-h-11 rounded-[9px] px-4 text-[14px] font-semibold text-white">
