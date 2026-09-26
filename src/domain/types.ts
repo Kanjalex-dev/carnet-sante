@@ -51,6 +51,12 @@ export interface VaccinationEvent {
   lotNumber?: string
   practitioner?: string
   place?: string
+  /**
+   * Carnet de voyage : etiquette libre du sejour. Elle classe
+   * l'enregistrement et n'est jamais interpretee — aucune correspondance
+   * destination -> vaccin n'existe dans l'application.
+   */
+  destination?: string
   source: 'manual' | 'ocr-local' | 'ocr-remote' | 'import'
   confidence?: number
   verifiedByUser: boolean

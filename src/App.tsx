@@ -10,6 +10,7 @@ import { Onboarding } from './ui/Onboarding'
 import { Status } from './ui/Status'
 import { Record } from './ui/Record'
 import { Growth, type MeasureInput } from './ui/Growth'
+import { Travel, type TravelEntry } from './ui/Travel'
 import { Settings } from './ui/Settings'
 import { Nav, type Tab } from './ui/Nav'
 import { ExplainProvider } from './ui/Explain'
@@ -129,6 +130,31 @@ export default function App() {
     void maybeRequestReview(v.vaccinations.filter((e) => e.childId === child.id).length)
   }
 
+  const recordTravel = async (entry: TravelEntry) => {
+    const event: VaccinationEvent = {
+      id: newId(),
+      childId: child.id,
+      valences: [entry.code],
+      date: entry.date,
+      destination: entry.destination,
+      source: 'manual',
+      verifiedByUser: true,
+      attachmentIds: [],
+      createdAt: stamp(),
+      updatedAt: stamp(),
+    }
+    await mutate((vault) => { vault.vaccinations.push(event) })
+    await load()
+  }
+
+  const removeTravel = async (eventId: string) => {
+    await mutate((vault) => {
+      const e = vault.vaccinations.find((x) => x.id === eventId)
+      if (e) { e.deletedAt = stamp(); e.updatedAt = stamp() }
+    })
+    await load()
+  }
+
   const addMeasure = async (input: MeasureInput) => {
     const m: GrowthMeasure = {
       id: newId(),
@@ -172,6 +198,9 @@ export default function App() {
         )}
         {tab === 'photos' && (
           <Record child={child} schedule={schedule} events={events} onChange={load} />
+        )}
+        {tab === 'travel' && (
+          <Travel child={child} events={events} onRecord={recordTravel} onRemove={removeTravel} />
         )}
         {tab === 'growth' && (
           <ProGate title="Courbes de croissance"
