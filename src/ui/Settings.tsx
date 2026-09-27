@@ -7,7 +7,6 @@ import { Button, LegalNotice } from './atoms'
 import { ShareSection } from './Share'
 import { BackupSection } from './Backup'
 import { BiometricSetting } from './BiometricSetting'
-import { ProGate } from '../pro/ProGate'
 
 export function Settings({ child, schedule, lockState, onSetupEncryption, onLock, onMerged, childSwitcher }: {
   child: Child
@@ -70,10 +69,7 @@ export function Settings({ child, schedule, lockState, onSetupEncryption, onLock
 
         <BackupSection onRestored={onMerged} />
 
-        <ProGate title="Partage co-parent"
-          description="Fusionnez le carnet avec celui tenu par l'autre parent, avec un aperçu ligne par ligne avant tout enregistrement.">
-          <ShareSection schedule={schedule} onMerged={onMerged} />
-        </ProGate>
+        <ShareSection schedule={schedule} onMerged={onMerged} />
 
         <Section title="Source des données">
           <p className="text-ink-muted m-0 px-3.5 py-3 text-[12.5px] leading-snug text-pretty">

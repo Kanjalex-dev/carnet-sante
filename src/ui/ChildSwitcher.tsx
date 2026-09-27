@@ -1,7 +1,5 @@
 import { useState } from 'react'
 import type { Child } from '../domain/types'
-import { isPro } from '../pro/purchases'
-import { Paywall } from '../pro/Paywall'
 import { AddChild } from './AddChild'
 import { frDate } from './format'
 
@@ -17,12 +15,7 @@ export function ChildSwitcher({ children, activeId, onSwitch, onCreate }: {
   onCreate: (v: { firstName: string; birthDate: string; sex: 'F' | 'M' }) => Promise<void>
 }) {
   const [adding, setAdding] = useState(false)
-  const [showPaywall, setShowPaywall] = useState(false)
-
-  const requestAdd = async () => {
-    if (children.length >= 1 && !(await isPro())) { setShowPaywall(true); return }
-    setAdding(true)
-  }
+  const requestAdd = () => { setAdding(true) }
 
   return (
     <section className="flex flex-col gap-2">
@@ -55,10 +48,6 @@ export function ChildSwitcher({ children, activeId, onSwitch, onCreate }: {
       {adding && (
         <AddChild onCancel={() => setAdding(false)}
           onCreate={async (v) => { setAdding(false); await onCreate(v) }} />
-      )}
-      {showPaywall && (
-        <Paywall onClose={() => setShowPaywall(false)}
-          onUnlocked={() => { setShowPaywall(false); setAdding(true) }} />
       )}
     </section>
   )

@@ -40,6 +40,12 @@ interface SettingsRow {
   kdf: KdfParams | null
   canary: Sealed | null
   /** Achat unique, à vie : jamais réinitialisé par un verrouillage ou une purge d'attachements. */
+  /**
+   * Vestiges de l'achat integre « Carnet Pro », retire le 27/09/2026 :
+   * l'application est gratuite, sans achat ni publicite. Les cles restent
+   * declarees parce que des carnets crees avant cette date les portent
+   * encore en base ; plus rien ne les lit ni ne les ecrit.
+   */
   pro?: boolean
   proPurchasedAt?: string
   /** Empêche de solliciter l'avis App Store plus d'une fois — StoreKit limite déjà, on ajoute notre propre garde-fou. */
@@ -206,30 +212,6 @@ export async function deleteAttachment(id: string): Promise<void> {
  * sans elle les données sont irrécupérables, et une application qu'on ne peut
  * plus ni ouvrir ni réinitialiser est une impasse.
  */
-/* -------------------------------------------------------------------- pro */
-
-/**
- * Débloqué une fois, débloqué à vie : aucune vérification récurrente auprès
- * d'un serveur — il n'y en a pas. La preuve d'achat vit chez Apple ; ce
- * drapeau local ne fait que refléter la dernière transaction connue.
- */
-export async function isPro(): Promise<boolean> {
-  const s = await db.settings.get('settings')
-  return s?.pro === true
-}
-
-export async function setPro(purchased: boolean): Promise<void> {
-  const s = await db.settings.get('settings')
-  await db.settings.put({
-    id: 'settings',
-    encrypted: s?.encrypted ?? false,
-    kdf: s?.kdf ?? null,
-    canary: s?.canary ?? null,
-    pro: purchased,
-    proPurchasedAt: purchased ? new Date().toISOString() : undefined,
-  })
-}
-
 /* ----------------------------------------------------------------- avis */
 
 /** Vrai si on a déjà demandé un avis App Store — on ne redemande jamais nous-mêmes. */
@@ -245,8 +227,6 @@ export async function markReviewPromptShown(): Promise<void> {
     encrypted: s?.encrypted ?? false,
     kdf: s?.kdf ?? null,
     canary: s?.canary ?? null,
-    pro: s?.pro,
-    proPurchasedAt: s?.proPurchasedAt,
     reviewPromptShown: true,
   })
 }

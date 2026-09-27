@@ -20,7 +20,6 @@ import type { GrowthMeasure, VaccinationEvent } from './domain/types'
 import { today } from './domain/dates'
 import { syncReminders } from './native/reminders'
 import { maybeRequestReview } from './native/review'
-import { ProGate } from './pro/ProGate'
 import { ChildSwitcher } from './ui/ChildSwitcher'
 
 const schedule = scheduleData as Schedule
@@ -190,7 +189,7 @@ export default function App() {
 
   return (
     <ExplainProvider>
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex min-h-dvh flex-col pt-[env(safe-area-inset-top)]">
       {/* Réserve la hauteur de la barre fixe : aucun contenu ne passe dessous. */}
       <div className="flex flex-1 flex-col pb-[76px]">
         {tab === 'status' && (
@@ -203,10 +202,7 @@ export default function App() {
           <Travel child={child} events={events} onRecord={recordTravel} onRemove={removeTravel} />
         )}
         {tab === 'growth' && (
-          <ProGate title="Courbes de croissance"
-            description="Suivez le poids, la taille et le périmètre crânien de votre enfant par rapport aux courbes de référence de l'OMS.">
-            <Growth child={child} measures={measures} onAdd={addMeasure} onDelete={removeMeasure} />
-          </ProGate>
+          <Growth child={child} measures={measures} onAdd={addMeasure} onDelete={removeMeasure} />
         )}
         {tab === 'settings' && (
           <Settings

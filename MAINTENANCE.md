@@ -83,6 +83,13 @@ calendrier vaccinal »). Elle observe et signale, elle ne modifie rien.
   notification poussée à une date d'échéance serait un acte d'incitation à un
   acte de prévention. **Ne jamais brancher `calendarReminders` sur les
   notifications natives.**
+- **Aucun achat intégré, et le code qui en portait un a été supprimé.** Un
+  paywall « Carnet Pro — 4,99 € » verrouillait les courbes de croissance, le
+  partage co-parent, le multi-enfants et le partage du récapitulatif. Il
+  contredisait la décision du 26/09, la fiche App Store qui affirme l'absence
+  d'achat intégré, et il faisait payer l'accès aux courbes de l'OMS —
+  précisément ce que leur clause non commerciale interdit. `src/pro/` est
+  supprimé. Ne pas le réintroduire sans rouvrir ces trois points.
 - **La liste des sept vaccins de voyage est une sélection éditoriale**, pas la
   reproduction d'une recommandation officielle. L'écran le dit désormais.
   Toute modification de cette liste engage l'éditeur.

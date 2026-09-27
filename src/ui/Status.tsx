@@ -13,7 +13,6 @@ import { DoseEntry, type DoseEntryValue } from './DoseEntry'
 import { frDate as humanDate, humanAge } from './format'
 import { CalendarPosition, CarnetState } from './status/CalendarPosition'
 import { CatchUpCard } from './status/CatchUpCard'
-import { Progress } from './status/Progress'
 import { VisitSection } from './status/VisitList'
 import { buildValenceIndex } from './explanations'
 
@@ -102,12 +101,7 @@ export function Status({ child, schedule, events, onRecord, onRemindersChange }:
           }}
         />
 
-        <Progress
-          satisfied={summary.mandatoryComplete}
-          total={summary.mandatoryTotal}
-          unverified={unverifiedEvents}
-          birthDate={child.birthDate}
-        />
+        <Unverified count={unverifiedEvents} />
 
         {/* Replie par defaut : le decompte reste visible dans l'en-tete, seul
             le scroll disparait. La longueur d'une liste est un message. */}
@@ -170,3 +164,28 @@ export function Status({ child, schedule, events, onRecord, onRemindersChange }:
  * mais « qu'est-ce qui manque au carnet ». Cet indicateur y répond d'un coup
  * d'œil. Il décrit le carnet, jamais l'état vaccinal de l'enfant.
  */
+
+/**
+ * Ce qui reste a relire, et rien d'autre.
+ *
+ * Remplace l'ancienne barre « Vaccins obligatoires inscrits 0 / 8 ». Une
+ * fraction assortie d'une barre de progression est un decompte de manques :
+ * le mot « retard » n'y figure pas, et pourtant elle produit exactement
+ * l'effet qu'un decompte de retard produit. Ici le chiffre ne compte que les
+ * inscriptions importees par photo que le parent n'a pas encore relues —
+ * une tache qui lui appartient, pas un jugement sur l'enfant.
+ */
+function Unverified({ count }: { count: number }) {
+  if (count === 0) return null
+  return (
+    <section className="border-line bg-surface rounded-[12px] border p-3.5">
+      <h2 className="text-ink-muted m-0 text-[11px] font-bold tracking-[0.09em] uppercase">
+        À relire
+      </h2>
+      <p className="text-ink-strong m-0 mt-2 text-[13px] leading-snug text-pretty">
+        {count} vaccination{count > 1 ? 's' : ''} importée{count > 1 ? 's' : ''} par photo
+        reste{count > 1 ? 'nt' : ''} à vérifier. Ouvrez la fiche pour confirmer ce qui a été lu.
+      </p>
+    </section>
+  )
+}

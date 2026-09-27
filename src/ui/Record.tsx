@@ -14,8 +14,6 @@ import { Explainable } from './Explain'
 import { buildLabelIndex, buildValenceIndex, verifiedExplanation } from './explanations'
 import { isNative } from '../native/platform'
 import { shareFile } from '../native/share'
-import { isPro } from '../pro/purchases'
-import { Paywall } from '../pro/Paywall'
 
 
 export function Record({ child, schedule, events, onChange }: {
@@ -26,7 +24,6 @@ export function Record({ child, schedule, events, onChange }: {
 }) {
   const [exporting, setExporting] = useState(false)
   const [sharing, setSharing] = useState(false)
-  const [showPaywall, setShowPaywall] = useState(false)
   const [photoKey, setPhotoKey] = useState(0)
   const [reading, setReading] = useState<AttachmentMeta | null>(null)
   const explanations = useMemo(() => buildValenceIndex(schedule), [schedule])
@@ -58,7 +55,7 @@ export function Record({ child, schedule, events, onChange }: {
           </h2>
           {live.length === 0 ? (
             <p className="border-line bg-surface text-ink-muted m-0 rounded-[12px] border px-3.5 py-4 text-[13px] leading-snug text-pretty">
-              Les doses que vous marquez comme faites depuis l'onglet Statut apparaîtront ici, et
+              Les doses que vous inscrivez depuis l'onglet Statut apparaîtront ici, et
               pourront être corrigées.
             </p>
           ) : (
@@ -103,7 +100,6 @@ export function Record({ child, schedule, events, onChange }: {
           </Button>
           {isNative() && (
             <Button full variant="secondary" disabled={sharing} onClick={async () => {
-              if (!(await isPro())) { setShowPaywall(true); return }
               setSharing(true)
               try {
                 const attachments = await listAttachments(child.id)
@@ -158,9 +154,6 @@ export function Record({ child, schedule, events, onChange }: {
             await onChange()
           }}
         />
-      )}
-      {showPaywall && (
-        <Paywall onClose={() => setShowPaywall(false)} onUnlocked={() => setShowPaywall(false)} />
       )}
     </div>
   )
