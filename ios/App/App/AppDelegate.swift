@@ -7,8 +7,48 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        excludeHealthDataFromICloudBackup()
         return true
+    }
+
+    /// Exclut de la sauvegarde iCloud les dossiers ou la WKWebView stocke
+    /// IndexedDB et le stockage local.
+    ///
+    /// La guideline 5.1.3 (ii) de l'App Store interdit de stocker des donnees
+    /// de sante personnelles dans iCloud. Sans cette exclusion, le contenu du
+    /// carnet — vaccinations, mesures, photos du carnet papier — part dans la
+    /// sauvegarde iCloud de l'appareil par defaut, ce qui contredit a la fois
+    /// la guideline et la promesse faite a l'utilisateur : « aucune donnee de
+    /// ce carnet ne quitte votre appareil ».
+    ///
+    /// Appele a chaque lancement, et non une seule fois : iOS recree ces
+    /// dossiers, et l'attribut se perd a la recreation.
+    private func excludeHealthDataFromICloudBackup() {
+        let fileManager = FileManager.default
+        guard let library = fileManager.urls(for: .libraryDirectory, in: .userDomainMask).first else {
+            return
+        }
+
+        // WebKit/ couvre IndexedDB et LocalStorage de la WKWebView.
+        // Application Support/ couvre ce que les plugins Capacitor y deposent.
+        let sensitive = [
+            library.appendingPathComponent("WebKit", isDirectory: true),
+            library.appendingPathComponent("Application Support", isDirectory: true),
+        ]
+
+        for url in sensitive {
+            guard fileManager.fileExists(atPath: url.path) else { continue }
+            var target = url
+            var values = URLResourceValues()
+            values.isExcludedFromBackup = true
+            do {
+                try target.setResourceValues(values)
+            } catch {
+                // Un echec n'empeche pas le lancement : on ne bloque jamais
+                // l'acces au carnet pour un attribut de sauvegarde.
+                NSLog("Carnet: exclusion iCloud impossible pour \(url.lastPathComponent) — \(error)")
+            }
+        }
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
