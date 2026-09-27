@@ -25,22 +25,23 @@ Le sync et le build ne peuvent pas tourner depuis mon environnement : c'est une
 VM Linux sans Xcode, et la suppression de fichiers y est interdite, ce qui fait
 échouer `cap sync` à chaque tentative.
 
+Le sync est **déjà fait et propre** dans le dépôt : les assets embarqués dans
+`ios/App/App/public` sont identiques au dernier build. Il reste à compiler.
+
 ```
 cd ~/Sites/carnet-app
-rm -rf dist-old-* ios/cordova-old-* ios/App/App/public-old-* ios/App/App/*.old-*
-npm run build
-npx cap sync ios
 npx cap open ios
 ```
 
-Les `*-old-*` sont des dossiers que j'ai dû renommer au lieu de supprimer. Ils
-ne servent à rien et ne sont pas suivis par git.
+Si tu as modifié le code web entre-temps : `npm run build && npx cap sync ios`
+d'abord.
 
 Dans Xcode :
 
 1. **Signing & Capabilities** → équipe IE Digital, bundle `com.iedigital.carnet`.
-2. **Icône.** Il n'y a qu'un `AppIcon-512@2x.png`. Vérifier qu'il couvre toutes
-   les tailles requises, sinon la soumission est rejetée.
+2. **Icône : rien à faire.** Le `Contents.json` utilise le format d'icône
+   unique d'Xcode 14+ — un seul PNG 1024×1024 « universal », à partir duquel
+   Xcode génère toutes les tailles. Vérifié.
 3. **Build sur appareil réel**, pas seulement simulateur. À tester en
    particulier : clavier qui masque les champs de saisie, zones sûres en haut
    et en bas, retour arrière, appareil photo, Face ID, notifications locales.
