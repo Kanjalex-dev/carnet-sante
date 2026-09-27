@@ -14,6 +14,7 @@ coverage/
 ios/App/Pods
 ios/.build
 
-# Autre projet, present dans ce dossier par accident. Ne doit jamais
-# entrer dans ce depot : il est public.
+# Garde-fou. Patrimo a vecu ici par accident et s'est retrouve commite
+# dans ce depot, qui est public. Il habite desormais ~/Sites/patrimo.
+# Cette ligne reste pour qu'un dossier repose la par erreur n'y entre pas.
 /patrimo/

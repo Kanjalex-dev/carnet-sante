@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  Manifeste de confidentialité — exigé par Apple depuis 2024.
+
+	  Carnet ne collecte rien. Aucun compte, aucun serveur, aucune
+	  télémétrie, aucune régie publicitaire, aucun SDK tiers de mesure.
+	  NSPrivacyCollectedDataTypes est donc vide, et ce n'est pas un oubli :
+	  c'est la déclaration exacte de ce que fait l'application.
+
+	  Les API à raison obligatoire déclarées ci-dessous sont celles que
+	  Capacitor et ses greffons utilisent pour lire et écrire les fichiers
+	  de l'application elle-même. À vérifier au premier envoi vers App
+	  Store Connect : Apple signale à l'upload toute API utilisée et non
+	  déclarée. Ne jamais déclarer une catégorie « au cas où » — une
+	  déclaration inexacte est un motif de rejet au même titre qu'une
+	  déclaration manquante.
+	-->
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<!-- Horodatage des fichiers créés par l'application (photos du
+			     carnet, exports). Raison C617.1 : fichiers de l'app. -->
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>C617.1</string>
+			</array>
+		</dict>
+		<dict>
+			<!-- UserDefaults de l'application seule. Raison CA92.1. -->
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

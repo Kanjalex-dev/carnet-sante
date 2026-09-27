@@ -50,6 +50,24 @@ Dans Xcode :
    ne pèse rien ou presque.
 5. Archive → App Store Connect.
 
+## Manifeste de confidentialité
+
+`ios/App/App/PrivacyInfo.xcprivacy` est créé. Il déclare : aucun suivi, aucune
+donnée collectée, et deux API à raison obligatoire (horodatage de fichiers,
+UserDefaults de l'app). **À vérifier au premier envoi vers App Store Connect** :
+Apple signale à l'upload toute API utilisée et non déclarée. Ne jamais déclarer
+une catégorie « au cas où » — une déclaration inexacte est un motif de rejet au
+même titre qu'une déclaration manquante.
+
+**Le fichier doit être ajouté à la cible dans Xcode** (Build Phases → Copy
+Bundle Resources) s'il n'y apparaît pas automatiquement après `cap sync`.
+
+## Fiche App Store
+
+Les textes prêts à coller — nom, sous-titre, description, mots-clés, réponses
+au questionnaire de confidentialité, notes pour l'examinateur — sont dans
+**`APPSTORE.md`**.
+
 ## Fiche App Store — règles à tenir
 
 La destination revendiquée s'apprécie sur **tout le matériel promotionnel**,
