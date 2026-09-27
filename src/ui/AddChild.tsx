@@ -26,7 +26,7 @@ export function AddChild({ onCancel, onCreate }: {
           Ajouter un enfant
         </h2>
         <p className="text-ink-muted mt-1 mb-5 text-[13px] text-pretty">
-          Son carnet est indépendant : vaccins, croissance et rappels lui sont propres.
+          Son carnet est indépendant : vaccins, croissance et aide-mémoire lui sont propres.
         </p>
 
         <div className="flex flex-col gap-4">

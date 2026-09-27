@@ -84,7 +84,7 @@ export function Status({ child, schedule, events, onRecord, onRemindersChange }:
       <main className="flex flex-1 flex-col gap-5 px-5 pb-6">
         {/* Le carnet d'abord. Un carnet de sante sert a garder la trace de ce
             qui a ete fait ; le calendrier n'est qu'un repere en second. */}
-        <CarnetState recorded={recorded.length} notRecorded={open.length} />
+        <CarnetState recorded={recorded.length} />
 
         <VisitSection title="Inscrit au carnet" groups={recorded} onPick={setEntry}
           explanations={explanations}
@@ -92,7 +92,6 @@ export function Status({ child, schedule, events, onRecord, onRemindersChange }:
 
         <CalendarPosition
           timeline={timeline}
-          firstName={child.firstName}
           scheduleLabel={schedule.label}
           explanations={explanations}
           onRecord={() => {
@@ -347,9 +346,8 @@ function VisitCard({ group, onPick, explanations }: {
  *  - le tampon de referentiel est affiche avec le resultat, pas dans les reglages ;
  *  - le titre reste une echeance du calendrier, jamais une conduite a tenir.
  */
-function CalendarPosition({ timeline, firstName, scheduleLabel, explanations, onRecord }: {
+function CalendarPosition({ timeline, scheduleLabel, explanations, onRecord }: {
   timeline: ReturnType<typeof buildTimeline>
-  firstName: string
   scheduleLabel: string
   explanations: Map<string, Explanation>
   onRecord: () => void
@@ -364,7 +362,7 @@ function CalendarPosition({ timeline, firstName, scheduleLabel, explanations, on
       {v ? (
         <>
           <h1 className="font-display text-blue-700 m-0 text-[23px] leading-[1.2] font-normal tracking-tight text-pretty">
-            Le calendrier officiel prévoit une échéance à cet âge.
+            À cet âge, le calendrier officiel fait figurer une échéance.
           </h1>
           <p className="text-ink-strong m-0 text-[13.5px] leading-snug text-pretty">
             L’échéance {v.label} est la seule que le calendrier place à cet âge.
@@ -412,7 +410,7 @@ function CalendarPosition({ timeline, firstName, scheduleLabel, explanations, on
       )}
 
       <p className="text-ink-strong border-line m-0 border-t pt-3 text-[12.5px] leading-snug text-pretty">
-        {computedNotice(firstName)}
+        {computedNotice()}
       </p>
       <p className="text-ink-muted m-0 text-[11.5px] tnum">
         {referentialStamp(scheduleLabel, humanDate(timeline.appliedOn))}
@@ -427,7 +425,7 @@ function CalendarPosition({ timeline, firstName, scheduleLabel, explanations, on
  * est le composant, pas une mention — c'est elle qui retire au nombre son
  * pouvoir d'accusation.
  */
-function CarnetState({ recorded, notRecorded }: { recorded: number; notRecorded: number }) {
+function CarnetState({ recorded }: { recorded: number }) {
   return (
     <section className="border-line bg-surface-soft flex flex-col gap-2 rounded-[12px] border p-4">
       <span className="text-ink-muted text-[10.5px] font-bold tracking-[0.09em] uppercase">
@@ -437,7 +435,8 @@ function CarnetState({ recorded, notRecorded }: { recorded: number; notRecorded:
         {recorded} inscription{recorded > 1 ? 's' : ''} enregistrée{recorded > 1 ? 's' : ''}
       </p>
       <p className="text-ink-muted m-0 text-[13px] leading-snug text-pretty">
-        {notRecorded} échéance{notRecorded > 1 ? 's' : ''} du calendrier sans inscription dans ce carnet.
+        Les échéances du calendrier qui ne figurent pas encore dans ce carnet sont listées
+        plus bas.
       </p>
       <p className="text-ink-strong border-line m-0 border-t pt-2.5 text-[12.5px] leading-snug text-pretty">
         Une échéance qui n’est pas inscrite ne veut pas dire qu’elle n’a pas eu lieu :

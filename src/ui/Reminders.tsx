@@ -41,12 +41,12 @@ export function Reminders({ childId, onChange }: {
   return (
     <section className="flex flex-col gap-2.5">
       <h2 className="text-ink-muted m-0 text-[11px] font-bold tracking-[0.09em] uppercase">
-        Mes rappels
+        Mes aide-mémoire
       </h2>
 
       {items.length === 0 && !open && (
         <p className="text-ink-muted m-0 text-[12.5px] leading-snug text-pretty">
-          Aucun rappel. Vous pouvez en créer un pour la date de votre choix — par exemple
+          Aucun aide-mémoire. Vous pouvez en créer un pour la date de votre choix — par exemple
           après avoir pris rendez-vous chez le médecin.
         </p>
       )}
@@ -61,7 +61,7 @@ export function Reminders({ childId, onChange }: {
                 <span className="text-ink-muted tnum text-[12px]">{frDate(r.date)}</span>
               </div>
               <button onClick={() => void remove(r.id)}
-                aria-label={`Supprimer le rappel ${r.label}`}
+                aria-label={`Supprimer l’aide-mémoire ${r.label}`}
                 className="text-ink-muted inline-flex min-h-11 shrink-0 items-center px-2 text-[12.5px] font-semibold">
                 Supprimer
               </button>
@@ -85,12 +85,12 @@ export function Reminders({ childId, onChange }: {
               className="border-line bg-paper-sunken min-h-11 rounded-[8px] border px-3 text-[14px]" />
           </label>
           <div className="flex gap-2">
-            <Button onClick={() => void save()}>Créer le rappel</Button>
+            <Button onClick={() => void save()}>Créer l’aide-mémoire</Button>
             <Button variant="secondary" onClick={() => setOpen(false)}>Annuler</Button>
           </div>
         </div>
       ) : (
-        <Button variant="secondary" onClick={() => setOpen(true)}>Ajouter un rappel</Button>
+        <Button variant="secondary" onClick={() => setOpen(true)}>Ajouter un aide-mémoire</Button>
       )}
     </section>
   )
