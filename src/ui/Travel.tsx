@@ -90,6 +90,12 @@ export function Travel({ child, events, onRecord, onRemove }: {
           </Button>
         </section>
 
+        <p className="text-ink-faint m-0 text-[11.5px] leading-snug text-pretty">
+          Cette liste de sept vaccins est fixe et choisie par l’éditeur. Elle ne reproduit aucune
+          recommandation officielle et ne dépend d’aucune destination. Les vaccins de voyage qui
+          vous concernent se déterminent en consultation.
+        </p>
+
         <section className="flex flex-col gap-2.5">
           <h2 className="text-ink-muted m-0 text-[11px] font-bold tracking-[0.09em] uppercase">
             Déjà inscrits

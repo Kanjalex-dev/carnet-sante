@@ -63,16 +63,41 @@ mois (il est à 6 ans), et des tranches d'âge de rattrapage fabriquées.
 Une veille mensuelle automatique est en place (tâche planifiée « Carnet — veille
 calendrier vaccinal »). Elle observe et signale, elle ne modifie rien.
 
+## Décisions arrêtées le 27/09/2026
+
+- **Les courbes restent celles de l'OMS.** La bascule vers les courbes
+  françaises AFPA/CRESS/Inserm a été étudiée puis abandonnée : le CRESS ne
+  publie **aucune licence, aucune condition de réutilisation, aucun format de
+  citation** pour ces courbes. Basculer, c'était remplacer un risque documenté
+  (clause non commerciale de l'OMS, écrite et connue) par un risque non
+  documenté. Une demande d'autorisation est adressée à l'OMS ; si elle est
+  refusée, la fonction croissance sera retirée ou l'app dépubliée. Posture
+  assumée pour un projet de portefeuille : on ne touche à rien, on demande, et
+  on retire si besoin.
+- **Catégorie App Store : « Utilitaires ».** Choisir « Médecine » serait signer
+  soi-même une déclaration de finalité médicale. « Forme et santé » est
+  défendable mais moins bon.
+- **Les notifications ne portent QUE les aide-mémoire créés par le parent.**
+  `syncReminders` ne reçoit que des `ParentReminder` ; les échéances calculées
+  par `timeline.ts` ne sont jamais poussées. C'est déterminant : une
+  notification poussée à une date d'échéance serait un acte d'incitation à un
+  acte de prévention. **Ne jamais brancher `calendarReminders` sur les
+  notifications natives.**
+- **La liste des sept vaccins de voyage est une sélection éditoriale**, pas la
+  reproduction d'une recommandation officielle. L'écran le dit désormais.
+  Toute modification de cette liste engage l'éditeur.
+
 ## Questions ouvertes, à régler avant publication
 
-1. **Licence des courbes de croissance de l'OMS.** Elles arrivent par le paquet
-   npm `who-growth-standards`, sous licence MIT — mais son propre fichier
-   `NOTICE` précise que « the underlying reference data remains the work of the
-   WHO ». La MIT ne couvre que le code du paquet : un tiers ne peut pas céder
-   des droits qu'il ne détient pas. La politique de l'OMS applique par défaut
-   une clause **non commerciale**, qui vise probablement aussi une app gratuite
-   éditée par une société. À trancher par une demande d'autorisation écrite, ou
-   en basculant sur les courbes françaises AFPA/CRESS/Inserm.
+1. **Licence des courbes de croissance de l'OMS — demande en cours.** Elles
+   arrivent par le paquet npm `who-growth-standards`, sous licence MIT — mais
+   son propre fichier `NOTICE` précise que « the underlying reference data
+   remains the work of the WHO ». La MIT ne couvre que le code du paquet : un
+   tiers ne peut pas céder des droits qu'il ne détient pas. Demande
+   d'autorisation adressée à l'OMS ; brouillon dans
+   `~/Sites/carnet-demande-oms.md`. **Envoyer la demande AVANT de publier** :
+   publier avec une demande en cours est défendable, publier et attendre de se
+   faire prendre ne l'est pas.
 2. **Relecture de `src/ui/legal.ts`** par un avocat en droit des dispositifs
    médicaux — pas un généraliste.
 3. **Guideline Apple 5.1.3 (ii)** : interdit de stocker des données de santé
