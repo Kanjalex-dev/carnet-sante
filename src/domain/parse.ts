@@ -31,8 +31,8 @@ export interface Proposal {
 }
 
 const DATE_PATTERNS = [
-  /\b(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{4})\b/,
-  /\b(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{2})\b/,
+  /\b(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})\b/,
+  /\b(\d{1,2})[/.-](\d{1,2})[/.-](\d{2})\b/,
 ]
 
 export function normalise(s: string): string {
@@ -81,7 +81,7 @@ export function findProduct(text: string, products: ProductSpec[]): ProductSpec 
 
 /** Un numéro de lot mêle lettres et chiffres, et n'est pas une date. */
 export function findLot(text: string): string | undefined {
-  const withoutDates = text.replace(/\d{1,2}[/.\-]\d{1,2}[/.\-]\d{2,4}/g, ' ')
+  const withoutDates = text.replace(/\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}/g, ' ')
   const tokens = withoutDates.split(/[\s,;:]+/)
   for (const raw of tokens) {
     const t = raw.replace(/[^A-Za-z0-9]/g, '')

@@ -13,3 +13,7 @@ _to_delete/
 coverage/
 ios/App/Pods
 ios/.build
+
+# Autre projet, present dans ce dossier par accident. Ne doit jamais
+# entrer dans ce depot : il est public.
+/patrimo/
