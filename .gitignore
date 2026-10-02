@@ -15,6 +15,6 @@ ios/App/Pods
 ios/.build
 
 # Garde-fou. Patrimo a vecu ici par accident et s'est retrouve commite
-# dans ce depot, qui est public. Il habite desormais ~/Sites/patrimo.
+# dans ce depot, qui est public. Le projet a ete abandonne et supprime (02/10/2026).
 # Cette ligne reste pour qu'un dossier repose la par erreur n'y entre pas.
 /patrimo/

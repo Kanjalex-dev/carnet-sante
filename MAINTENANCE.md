@@ -102,7 +102,7 @@ calendrier vaccinal »). Elle observe et signale, elle ne modifie rien.
    remains the work of the WHO ». La MIT ne couvre que le code du paquet : un
    tiers ne peut pas céder des droits qu'il ne détient pas. Demande
    d'autorisation adressée à l'OMS ; brouillon dans
-   `~/Sites/carnet-demande-oms.md`. **Envoyer la demande AVANT de publier** :
+   `~/Developer/_docs/carnet/carnet-demande-oms.md`. **Envoyer la demande AVANT de publier** :
    publier avec une demande en cours est défendable, publier et attendre de se
    faire prendre ne l'est pas.
 2. **Relecture de `src/ui/legal.ts`** par un avocat en droit des dispositifs
@@ -122,14 +122,14 @@ calendrier vaccinal »). Elle observe et signale, elle ne modifie rien.
 - **`npm run build`** échoue si `dist/` existe déjà, pour la même raison.
   `mv dist dist-old-$RANDOM` avant de construire.
 - **Le push** utilise une clé de déploiement, déjà configurée dans
-  `core.sshCommand` (`/Users/kanja/Sites/.carnet-deploy-key`).
+  `core.sshCommand` (`/Users/kanja/Developer/.cles/carnet-deploy-key`).
 - **`tsc --noEmit` ne vérifie rien** à la racine d'un projet à références :
   toujours `tsc -b`. Une vraie erreur de type est déjà passée en production
   à cause de ça.
 
 ## Positionnement, pour ne pas le réinventer
 
-Benchmark du 26/09/2026, dans `~/Sites/carnet-benchmark-2026-09-26.md`.
+Benchmark du 26/09/2026, dans `~/Developer/_docs/carnet/carnet-benchmark-2026-09-26.md`.
 
 Mon espace santé couvre déjà le carnet vaccinal, les courbes, les rappels,
 l'export PDF crèche/école/voyage et le partage entre parents séparés, avec un

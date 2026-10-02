@@ -109,7 +109,7 @@ Titre et sous-titre proposés : **« Carnet — carnet de santé de l'enfant »*
 ## Préalables à la soumission
 
 1. **Autorisation OMS** sur les courbes de croissance (brouillon dans
-   `~/Sites/carnet-demande-oms.md`). À envoyer avant publication.
+   `~/Developer/_docs/carnet/carnet-demande-oms.md`). À envoyer avant publication.
 2. **Contreseing d'un avocat** en dispositifs médicaux sur `legal.ts` et le
    dossier de non-qualification.
 3. **Assurance RC produits** avec extension dommages immatériels non
