@@ -29,7 +29,7 @@ Le sync est **déjà fait et propre** dans le dépôt : les assets embarqués da
 `ios/App/App/public` sont identiques au dernier build. Il reste à compiler.
 
 ```
-cd ~/Sites/carnet-app
+cd ~/Developer/carnet-app
 npx cap open ios
 ```
 
